@@ -1,0 +1,67 @@
+<!doctype html>
+<html class="no-js" lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta name="description" content="">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Haiti food demo</title>
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <!-- Place favicon.ico in the root directory -->
+    <!-- build:css styles/vendor.css -->
+    <link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="/node_modules/mapbox-gl/dist/mapbox-gl.css" type="text/css" />
+    <link rel="stylesheet" href="/node_modules/bootstrap-slider/dist/css/bootstrap-slider.min.css" type="text/css" />
+    <!-- endbuild -->
+    <!-- build:css styles/main.css -->
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/map.css">
+    <!-- endbuild -->
+    <!-- build:js scripts/modernizr.js -->
+    <script src="scripts/modernizr.js"></script>
+    <!-- endbuild -->
+    <script src="https://kit.fontawesome.com/5b8a9967c1.js" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <!--[if IE]>
+      <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
+    <div class="container-fluid" id="container">
+      <header>
+        <div class="dropdown" id="measure-dropdown">
+          <button class="btn btn-primary dropdown-toggle" type="button" id="measure-dropdown-button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Select a measure
+          </button>
+          <div class="dropdown-menu" aria-labelledby="measure-dropdown-button">
+            <a class="dropdown-item" href="#" data-value='Measure 1'>hdvi</a>
+          </div>
+        </div>
+      </header>
+      <div class="row no-gutters content">
+        <div class="col-3">
+          <div class="sidebar">
+            <h3 id="measure-name">hdvi</h3>
+          </div>
+        </div>
+        <div class="map-container col">
+          <div id="map"></div>
+        </div>
+      </div>
+    </div>
+    <div id="probe">
+      <h4 id="probe-title"></h4>
+      <div id="probe-content"></div>
+    </div>
+    <!-- build:js scripts/vendor.js -->
+    <script type="text/javascript" src="/node_modules/d3/dist/d3.min.js"></script>
+    <script type="text/javascript" src="/node_modules/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="/node_modules/popper.js/dist/umd/popper.js"></script>
+    <script type="text/javascript" src="/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/node_modules/mapbox-gl/dist/mapbox-gl.js"></script>
+    <script type="text/javascript" src="/node_modules/bootstrap-input-spinner/src/bootstrap-input-spinner.js"></script>
+    <!-- endbuild -->
+    <!-- build:js scripts/main.js -->
+    <script src="scripts/main.js"></script>
+    <!-- endbuild -->
+  </body>
+</html>
