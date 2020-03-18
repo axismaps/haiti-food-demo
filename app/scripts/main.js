@@ -130,10 +130,6 @@ const categoricalColors = d3.schemeSet3;
 const choroplethColors = d3.schemeBlues[5];
 let fillStyle = '#ccc';
 
-const updateChoroplethStyle = () => {
-
-}
-
 const updateMap = () => {
   let idProp = 'id';
 
@@ -171,7 +167,7 @@ const updateMap = () => {
       .classed('categorical', false)
       .style('background-color', (d, i) => choroplethColors[i])
       .select('span')
-      .html((d, i) => i === choroplethBreaks.length ? '' : d3.format('2~r')(d));
+      .html((d, i) => i === choroplethBreaks.length ? '' : d3.format('.2~r')(d));
   } else {
     fillStyle = ['case',
       ['==', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], null], '#ccc'
@@ -266,7 +262,17 @@ const handleMousemove = (e) => {
   if (e.features.length) {
     const feature = e.features[0];
     const { pageX, pageY } = e.originalEvent;
-    showProbe([pageX, pageY], feature.properties.name);        
+    const d = currentData[feature.properties.id];
+    let formatted;
+    if (d === undefined) formatted = 'N/A';
+    else {
+      if (currentMeasure.type === 'list') {
+        formatted = currentMeasure.values[Math.round(d.value) - 1];
+      } else {
+        formatted = d3.format('.2~r')(d.value);
+      }
+    }
+    showProbe([pageX, pageY], feature.properties.name, `${currentMeasure.label}: ${formatted}`);        
   }
 }
 
