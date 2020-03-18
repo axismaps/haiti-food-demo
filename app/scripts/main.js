@@ -332,12 +332,12 @@ const hideProbe = () => {
 
 const init = () => {
   map.addSource('haiti', geoSource)
-    .addLayer(departementLayer)
-    .addLayer(communeLayer)
-    .addLayer(sectionLayer)
-    .addLayer(departementLineLayer)
-    .addLayer(communeLineLayer)
-    .addLayer(sectionLineLayer)
+    .addLayer(departementLayer, 'road-label')
+    .addLayer(communeLayer, 'road-label')
+    .addLayer(sectionLayer, 'road-label')
+    .addLayer(departementLineLayer, 'road-label')
+    .addLayer(communeLineLayer, 'road-label')
+    .addLayer(sectionLineLayer, 'road-label')
     // probe mouse events
     .on('mousemove', 'departement', handleMousemove)
     .on('mouseout', 'departement', hideProbe)
