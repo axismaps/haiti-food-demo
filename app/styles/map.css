@@ -2,3 +2,38 @@
     height: 100%;
     width: 100%;
 }
+
+.legend-swatch {
+  width: 25px;
+  height: 25px;
+}
+
+.legend-swatch span {
+  position: relative;
+  left: 35px;
+  top: 13px;
+  white-space: nowrap;
+}
+
+.legend-swatch.categorical span {
+  top: 0;
+}
+
+.legend-swatch span::before {
+  content: '';
+  width: 8px;
+  border-bottom: 1px solid #333;
+  height: 1px;
+  display: block;
+  left: -10px;
+  top: 12px;
+  position: relative;
+}
+
+.legend-swatch:last-child span::before {
+  display: none;
+}
+
+.legend-swatch.categorical:last-child span::before {
+  display: block;
+}

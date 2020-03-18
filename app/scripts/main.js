@@ -36,10 +36,10 @@ const geoSource = {
   url: 'mapbox://axismaps.0px6eqw0'
 };
 
-const departementsLayer = {
+const departementLayer = {
   id: 'departement',
   source: 'haiti',
-  'source-layer': 'departments',
+  'source-layer': 'departement',
   type: 'fill',
   minzoom: 0,
   maxzoom: maxZooms.departement,
@@ -49,10 +49,10 @@ const departementsLayer = {
   }
 };
 
-const departementsLineLayer = {
+const departementLineLayer = {
   id: 'departement-line',
   source: 'haiti',
-  'source-layer': 'departments',
+  'source-layer': 'departement',
   type: 'line',
   minzoom: 0,
   maxzoom: maxZooms.departement,
@@ -61,10 +61,10 @@ const departementsLineLayer = {
   }
 };
 
-const communesLayer = {
+const communeLayer = {
   id: 'commune',
   source: 'haiti',
-  'source-layer': 'communes',
+  'source-layer': 'commune',
   type: 'fill',
   minzoom: maxZooms.departement,
   maxzoom: maxZooms.commune,
@@ -74,10 +74,10 @@ const communesLayer = {
   }
 };
 
-const communesLineLayer = {
+const communeLineLayer = {
   id: 'commune-line',
   source: 'haiti',
-  'source-layer': 'communes',
+  'source-layer': 'commune',
   type: 'line',
   minzoom: maxZooms.departement,
   maxzoom: maxZooms.commune,
@@ -86,10 +86,10 @@ const communesLineLayer = {
   }
 };
 
-const sectionsLayer = {
+const sectionLayer = {
   id: 'section',
   source: 'haiti',
-  'source-layer': 'sections',
+  'source-layer': 'section',
   type: 'fill',
   minzoom: maxZooms.commune,
   paint: {
@@ -98,10 +98,10 @@ const sectionsLayer = {
   }
 };
 
-const sectionsLineLayer = {
+const sectionLineLayer = {
   id: 'section-line',
   source: 'haiti',
-  'source-layer': 'sections',
+  'source-layer': 'section',
   type: 'line',
   minzoom: maxZooms.commune,
   paint: {
@@ -115,7 +115,9 @@ const sectionsLineLayer = {
 
 */
 
-let currentMeasure = 'hdvi';
+let measures;
+let currentMeasure;
+let currentMeasureName = 'hdvi';
 let currentUnit = 'departement';
 
 const apiBase = 'https://simast.herokuapp.com/v1/data/query/';
@@ -123,54 +125,124 @@ const apiBase = 'https://simast.herokuapp.com/v1/data/query/';
 const cachedData = {};
 let currentData = null;
 
-const choroplethBreaks = [.1, .2, .3, .4];
-const choroplethColors = ['#eff3ff','#bdd7e7','#6baed6','#3182bd','#08519c'];
+let choroplethBreaks = [.1, .2, .3, .4];
+const categoricalColors = d3.schemeSet3;
+const choroplethColors = d3.schemeBlues[5];
 
 const updateMap = () => {
-  let idProp;
-  if (currentUnit === 'departement') idProp = 'ID_Dep';
-  if (currentUnit === 'commune') idProp = 'id_com';
-  if (currentUnit === 'section') idProp = 'ID_Section';
+  let idProp = 'id';
 
   const mapData = {};
+  const allVals = [];
   Object.values(currentData).forEach((d) => {
-    mapData[d[currentUnit].toString().replace(/0(?!$)/g, '')] = d[currentMeasure];
+    mapData[d[currentUnit]] = d[currentMeasureName];
+    allVals.push(d[currentMeasureName]);
   });
-  const fillStyle = ['case',
-    ['==', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], null], '#ccc',
-    ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[0]], choroplethColors[0],
-    ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[1]], choroplethColors[1],
-    ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[2]], choroplethColors[2],
-    ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[3]], choroplethColors[3],
-    choroplethColors[4]
-  ];
 
-  map.setPaintProperty(currentUnit, 'fill-color', fillStyle);
+  if (currentMeasure.type !== 'list') {
+    const extent = d3.extent(allVals);
+    const scale = d3.scaleQuantize().domain(extent).range(choroplethColors).nice();
+    choroplethBreaks = scale.thresholds();
+    const fillStyle = ['case',
+      ['==', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], null], '#ccc',
+      ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[0]], choroplethColors[0],
+      ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[1]], choroplethColors[1],
+      ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[2]], choroplethColors[2],
+      ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[3]], choroplethColors[3],
+      choroplethColors[4]
+    ];
+
+    map.setPaintProperty(currentUnit, 'fill-color', fillStyle);
+
+    const swatches = d3.select('#map-legend').selectAll('.legend-swatch')
+      .data(choroplethBreaks.concat(null))
+    swatches.enter()
+      .append('div')
+      .attr('class', 'legend-swatch')
+      .append('span');
+    swatches.exit().remove();
+
+    d3.select('#map-legend').selectAll('.legend-swatch')
+      .classed('categorical', false)
+      .style('background-color', (d, i) => choroplethColors[i])
+      .select('span')
+      .html((d, i) => i === choroplethBreaks.length ? '' : d3.format('2~r')(d));
+  } else {
+    const fillStyle = ['case',
+      ['==', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], null], '#ccc'
+    ];
+
+    currentMeasure.values.forEach((value, i) => {
+      if (i >= categoricalColors.length) return; // for now just skip an excessive number of categories
+      fillStyle.push(['==', ['round', ['get', ['to-string', ['get', idProp]], ['literal', mapData]]], i + 1], categoricalColors[i]);
+    });
+    fillStyle.push('#ccc');
+
+    map.setPaintProperty(currentUnit, 'fill-color', fillStyle);
+
+    const swatches = d3.select('#map-legend').selectAll('.legend-swatch')
+      .data(currentMeasure.values)
+    swatches.enter()
+      .append('div')
+      .attr('class', 'legend-swatch')
+      .append('span');
+    swatches.exit().remove();
+
+    d3.select('#map-legend').selectAll('.legend-swatch')
+      .classed('categorical', true)
+      .style('background-color', (d, i) => categoricalColors[i])
+      .select('span')
+      .html(d => d);
+  }
+
+  
+
 };
 
 const requestData = () => {
-  if (cachedData[currentMeasure] && cachedData[currentMeasure][currentUnit]) {
-    currentData = cachedData[currentMeasure][currentUnit];
+  if (cachedData[currentMeasureName] && cachedData[currentMeasureName][currentUnit]) {
+    currentData = cachedData[currentMeasureName][currentUnit];
     updateMap();
   } else {
-    d3.json(`${apiBase}${currentMeasure}/${currentUnit}`, {
+    $('#loading').show();
+    d3.json(`${apiBase}${currentMeasureName}/${currentUnit}`, {
       method: 'POST'
     }).then((json) => { 
-      if (!cachedData[currentMeasure]) cachedData[currentMeasure] = {};
+      if (!cachedData[currentMeasureName]) cachedData[currentMeasureName] = {};
       const indexedData = {};
       json.forEach((d) => {
         indexedData[d[currentUnit]] = d;
       });
-      cachedData[currentMeasure][currentUnit] = indexedData;
+      cachedData[currentMeasureName][currentUnit] = indexedData;
       currentData = indexedData;
       updateMap();
+      $('#loading').hide();
     });
   }
 }
 
+const getMeasures = () => {
+  d3.json('https://simast.herokuapp.com/v1/data/fields').then((json) => {
+    measures = json;
+    d3.select('#measure-dropdown .dropdown-menu').selectAll('a')
+      .data(measures)
+      .enter()
+      .append('a')
+      .attr('class', 'dropdown-item')
+      .attr('href', '#')
+      .html(d => d.label)
+      .on('click', (d) => { updateMeasure(d); });
+
+    currentMeasure = measures.find(d => d.key === 'hdvi');
+    currentMeasureName = currentMeasure.key;
+    updateMeasure(currentMeasure);
+  });
+}
+
 const updateMeasure = (measure) => {
   currentMeasure = measure;
-  $('#measure-name').html(currentMeasure);
+  currentMeasureName = measure.key;
+  $('#measure-name').html(currentMeasure.label);
   requestData();
 };
 
@@ -179,15 +251,19 @@ const updateUnit = (unit) => {
   requestData();
 }
 
-$('#measure-dropdown .dropdown-item').on('click', function selectMeasure() {
-  updateMeasure($(this).attr('data-value'));
-});
-
 /*
 
 *** PROBE METHODS ***
 
 */
+
+const handleMousemove = (e) => {
+  if (e.features.length) {
+    const feature = e.features[0];
+    const { pageX, pageY } = e.originalEvent;
+    showProbe([pageX, pageY], feature.properties.name);        
+  }
+}
 
 const showProbe = (position, title, content) => {
   if (title) {
@@ -245,36 +321,18 @@ const hideProbe = () => {
 
 const init = () => {
   map.addSource('haiti', geoSource)
-    .addLayer(departementsLayer)
-    .addLayer(communesLayer)
-    .addLayer(sectionsLayer)
-    .addLayer(departementsLineLayer)
-    .addLayer(communesLineLayer)
-    .addLayer(sectionsLineLayer)
+    .addLayer(departementLayer)
+    .addLayer(communeLayer)
+    .addLayer(sectionLayer)
+    .addLayer(departementLineLayer)
+    .addLayer(communeLineLayer)
+    .addLayer(sectionLineLayer)
     // probe mouse events
-    .on('mousemove', 'departement', (e) => {
-      if (e.features.length) {
-        const feature = e.features[0];
-        const { pageX, pageY } = e.originalEvent;
-        showProbe([pageX, pageY], feature.properties.Departemen);        
-      }
-    })
+    .on('mousemove', 'departement', handleMousemove)
     .on('mouseout', 'departement', hideProbe)
-    .on('mousemove', 'commune', (e) => {
-      if (e.features.length) {
-        const feature = e.features[0];
-        const { pageX, pageY } = e.originalEvent;
-        showProbe([pageX, pageY], feature.properties.Commune);        
-      }
-    })
+    .on('mousemove', 'commune', handleMousemove)
     .on('mouseout', 'commune', hideProbe)
-    .on('mousemove', 'section', (e) => {
-      if (e.features.length) {
-        const feature = e.features[0];
-        const { pageX, pageY } = e.originalEvent;
-        showProbe([pageX, pageY], feature.properties.NAME_Sec);        
-      }
-    })
+    .on('mousemove', 'section', handleMousemove)
     .on('mouseout', 'section', hideProbe)
     // zoom event: update geography level
     .on('zoomend', () => {
@@ -288,7 +346,7 @@ const init = () => {
       } 
     });
 
-    requestData();
+    getMeasures();
 };
 
 map.on('load', init);
