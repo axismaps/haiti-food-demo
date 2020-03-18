@@ -141,7 +141,7 @@ const updateMap = () => {
 
   if (currentMeasure.type !== 'list') {
     const extent = d3.extent(allVals);
-    const scale = d3.scaleQuantize().domain(extent).range(choroplethColors).nice();
+    const scale = d3.scaleQuantize().domain([currentMeasure.min, currentMeasure.max]).range(choroplethColors).nice();
     choroplethBreaks = scale.thresholds();
     const fillStyle = ['case',
       ['==', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], null], '#ccc',
