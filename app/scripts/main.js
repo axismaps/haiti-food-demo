@@ -128,6 +128,11 @@ let currentData = null;
 let choroplethBreaks = [.1, .2, .3, .4];
 const categoricalColors = d3.schemeSet3;
 const choroplethColors = d3.schemeBlues[5];
+let fillStyle = '#ccc';
+
+const updateChoroplethStyle = () => {
+
+}
 
 const updateMap = () => {
   let idProp = 'id';
@@ -135,15 +140,15 @@ const updateMap = () => {
   const mapData = {};
   const allVals = [];
   Object.values(currentData).forEach((d) => {
-    mapData[d[currentUnit]] = d[currentMeasureName];
-    allVals.push(d[currentMeasureName]);
+    mapData[d.id] = d.value;
+    allVals.push(d.value);
   });
 
   if (currentMeasure.type !== 'list') {
     const extent = d3.extent(allVals);
-    const scale = d3.scaleQuantize().domain([currentMeasure.min, currentMeasure.max]).range(choroplethColors).nice();
+    const scale = d3.scaleQuantize().domain(d3.extent(allVals)).range(choroplethColors).nice();
     choroplethBreaks = scale.thresholds();
-    const fillStyle = ['case',
+    fillStyle = ['case',
       ['==', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], null], '#ccc',
       ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[0]], choroplethColors[0],
       ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[1]], choroplethColors[1],
@@ -168,7 +173,7 @@ const updateMap = () => {
       .select('span')
       .html((d, i) => i === choroplethBreaks.length ? '' : d3.format('2~r')(d));
   } else {
-    const fillStyle = ['case',
+    fillStyle = ['case',
       ['==', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], null], '#ccc'
     ];
 
@@ -194,26 +199,26 @@ const updateMap = () => {
       .select('span')
       .html(d => d);
   }
-
-  
-
 };
 
 const requestData = () => {
-  if (cachedData[currentMeasureName] && cachedData[currentMeasureName][currentUnit]) {
-    currentData = cachedData[currentMeasureName][currentUnit];
+  if (cachedData[currentMeasureName]) {
+    currentData = cachedData[currentMeasureName];
     updateMap();
   } else {
     $('#loading').show();
-    d3.json(`${apiBase}${currentMeasureName}/${currentUnit}`, {
+    d3.json(`${apiBase}${currentMeasureName}`, {
       method: 'POST'
     }).then((json) => { 
       if (!cachedData[currentMeasureName]) cachedData[currentMeasureName] = {};
       const indexedData = {};
-      json.forEach((d) => {
-        indexedData[d[currentUnit]] = d;
-      });
-      cachedData[currentMeasureName][currentUnit] = indexedData;
+      Object.values(json).forEach((level) => {
+        level.forEach((d) => {
+          indexedData[d.id] = d;
+        })
+
+      })
+      cachedData[currentMeasureName] = indexedData;
       currentData = indexedData;
       updateMap();
       $('#loading').hide();
@@ -248,7 +253,7 @@ const updateMeasure = (measure) => {
 
 const updateUnit = (unit) => {
   currentUnit = unit;
-  requestData();
+  map.setPaintProperty(currentUnit, 'fill-color', fillStyle);
 }
 
 /*
