@@ -208,6 +208,9 @@ const requestData = () => {
     const filterBody = filters.reduce((flatArray, filter) => flatArray.concat(filter.values), []);
     d3.json(`${apiBase}${currentMeasureName}`, {
       method: 'POST',
+      headers: {
+        'Content-type': 'application/json; charset=UTF-8'
+      },
       body: filterBody.length ? JSON.stringify(filterBody) : null
     }).then((json) => { 
       const indexedData = {};
