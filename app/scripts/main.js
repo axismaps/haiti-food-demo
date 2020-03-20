@@ -130,6 +130,8 @@ const categoricalColors = d3.schemeSet3;
 const choroplethColors = d3.schemeBlues[5];
 let fillStyle = '#ccc';
 
+let filters = [];
+
 const updateMap = () => {
   let idProp = 'id';
 
@@ -198,23 +200,28 @@ const updateMap = () => {
 };
 
 const requestData = () => {
-  if (cachedData[currentMeasureName]) {
+  if (!filters.length && cachedData[currentMeasureName]) {
     currentData = cachedData[currentMeasureName];
     updateMap();
   } else {
     $('#loading').show();
+    const filterBody = filters.reduce((flatArray, filter) => flatArray.concat(filter.values), []);
     d3.json(`${apiBase}${currentMeasureName}`, {
-      method: 'POST'
+      method: 'POST',
+      body: filterBody.length ? JSON.stringify(filterBody) : null
     }).then((json) => { 
-      if (!cachedData[currentMeasureName]) cachedData[currentMeasureName] = {};
       const indexedData = {};
       Object.values(json).forEach((level) => {
         level.forEach((d) => {
           indexedData[d.id] = d;
         })
 
-      })
-      cachedData[currentMeasureName] = indexedData;
+      });
+      if (!filters.length) {
+        if (!cachedData[currentMeasureName]) cachedData[currentMeasureName] = {};
+        cachedData[currentMeasureName] = indexedData;
+      }
+      
       currentData = indexedData;
       updateMap();
       $('#loading').hide();
@@ -232,7 +239,16 @@ const getMeasures = () => {
       .attr('class', 'dropdown-item')
       .attr('href', '#')
       .html(d => d.label)
-      .on('click', (d) => { updateMeasure(d); });
+      .on('click', updateMeasure);
+
+    d3.select('#filter-dropdown .dropdown-menu').selectAll('a')
+      .data(measures)
+      .enter()
+      .append('a')
+      .attr('class', 'dropdown-item')
+      .attr('href', '#')
+      .html(d => d.label)
+      .on('click', addFilter);
 
     currentMeasure = measures.find(d => d.key === 'hdvi');
     currentMeasureName = currentMeasure.key;
@@ -243,6 +259,9 @@ const getMeasures = () => {
 const updateMeasure = (measure) => {
   currentMeasure = measure;
   currentMeasureName = measure.key;
+  $('.filter-card').remove();
+  filters = [];
+  updateFilterDropdown();
   $('#measure-name').html(currentMeasure.label);
   requestData();
 };
@@ -326,6 +345,116 @@ const hideProbe = () => {
 
 /*
 
+*** FILTER METHODS ***
+
+*/
+
+const updateFilterDropdown = () => {
+  d3.selectAll('#filter-dropdown .dropdown-item')
+    .style('display', (d) => {
+      if (currentMeasure.key === d.key) return 'none';
+      if (filters.find(f => f.key === d.key)) return 'none';
+      return 'block';
+    })
+};
+
+const addFilter = (measure) => {
+  const filterCard = $('<div>')
+    .attr('class', 'card filter-card small')
+    .attr('data-measure', measure.key)
+    .appendTo('#filters .sidebar-content-inner');
+
+  $('<h6>')
+    .attr('class', 'card-title')
+    .html(measure.label)
+    .appendTo(filterCard);
+
+  const filterContent = $('<div>')
+    .attr('class', 'filter-content')
+    .appendTo(filterCard);
+
+  $('<i>')
+    .attr('class', 'fa fa-times')
+    .appendTo(filterCard)
+    .on('click', () => {
+      removeFilter(measure.key);
+    });
+
+  if (measure.type !== 'list') {
+    const subtitle = $('<h6>')
+      .attr('class', 'card-subtitle text-muted text-center')
+      .html(`${measure.min} – ${measure.max}`)
+      .insertBefore(filterContent);
+      
+    $('<input>')
+      .attr('class', 'slider')
+      .appendTo(filterContent)
+      .slider({
+        min: measure.min,
+        max: measure.max,
+        value: [measure.min, measure.max],
+        ticks: [measure.min, measure.max],
+        ticks_labels: [measure.min, measure.max],
+        tooltip: 'always',
+        tooltip_split: true
+      })
+      .on('change', (e) => {
+        const { value } = e;
+        subtitle.html(value.newValue.join(' – '));
+      })
+      .on('slideStop', (e) => {
+        const { value } = e;
+        const filter = filters.find(f => f.key === measure.key);
+        if (!filter) return;
+        filter.values = [['>=', measure.key, value[0]], ['<=', measure.key, value[1]]];
+        requestData();
+      });
+
+    filters.push({ key: measure.key, values: [['>=', measure.key, measure.min], ['<=', measure.key, measure.max]] });
+  } else {
+    d3.select(filterContent[0]).selectAll('div')
+      .data(measure.values)
+      .enter()
+      .append('div')
+      .attr('class', 'form-check')
+      .append('label')
+      .html(d => `<span>${d}</span>`)
+      .insert('input', ':first-child')
+      .attr('checked', 1)
+      .attr('type', 'checkbox')
+      .attr('class', 'form-check-input')
+      .on('change', () => {
+        const filter = filters.find(f => f.key === measure.key);
+        if (!filter) return;
+        const vals = [];
+        d3.select(filterContent[0]).selectAll('div.form-check input')
+          .each(function(d, i) {
+            if (this.checked) {
+              vals.push(i + 1);
+            }
+          });
+        if (vals.length) {
+          filter.values = [['=', measure.key, vals]];
+        } else {
+          filter.values = [['=', measure.key, d3.range(1, measure.values.length + 1)]];
+        }
+        requestData();
+      });
+
+      filters.push({ key: measure.key, values: [['=', measure.key, d3.range(1, measure.values.length + 1)]] });
+  }
+  updateFilterDropdown();
+};
+
+const removeFilter = (key) => {
+  filters = filters.filter(d => d.key !== key);
+  $(`.filter-card[data-measure="${key}"]`).remove();
+  updateFilterDropdown();
+  requestData();
+}
+
+/*
+
 *** INITIALIZATION AND EVENTS ***
 
 */
@@ -357,7 +486,18 @@ const init = () => {
       } 
     });
 
-    getMeasures();
+  getMeasures();
+
+  $('#sidebar-nav .nav-link').click(function() {
+    $('#sidebar-nav .nav-link, .sidebar-content').removeClass('active');
+    $(this).addClass('active');
+    const content = $(this).parent().attr('data-content');
+    $(`#${content}`).addClass('active');
+  });
+
+  $('input.slider').slider({
+    value: [2, 5]
+  });
 };
 
 map.on('load', init);

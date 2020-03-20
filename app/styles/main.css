@@ -22,10 +22,14 @@ header {
 .content {
   position: relative;
   flex: 1;
+  height: calc(100% - 60px);
 }
 
 .sidebar {
   padding: 15px;
+  display: flex;
+  height: 100%;
+  flex-direction: column;
 }
 
 #probe {
@@ -47,4 +51,45 @@ header {
   height: 100%;
   background: rgba(255,255,255,.5);
   display: flex;
+}
+
+#sidebar-nav {
+  margin-top: 15px;
+}
+
+.sidebar-content {
+  display: none;
+  padding-top: 15px;
+}
+
+.sidebar-content.active {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-content-inner {
+  overflow: auto;
+}
+
+.filter-card {
+  padding: 20px 10px 10px 10px;
+  margin: 10px 0;
+}
+
+.filter-card .fa-times {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+}
+
+.filter-content {
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.slider {
+  align-self: center;
 }
