@@ -16,6 +16,7 @@
     <!-- build:css styles/main.css -->
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/map.css">
+    <link rel="stylesheet" href="styles/charts.css">
     <!-- endbuild -->
     <!-- build:js scripts/modernizr.js -->
     <script src="scripts/modernizr.js"></script>
@@ -46,7 +47,14 @@
               <a class="nav-link" href="#">Filters</a>
             </li>
           </ul>
-          <div id="charts" class="sidebar-content d-flex flex-column p-3"></div>
+          <div id="charts" class="sidebar-content d-flex flex-column p-3 overflow-auto">
+            <div class="main-donut">
+              <svg width="130" height="130"></svg>
+            </div>
+            <div class="main-histogram">
+              <svg width="210" height="130"></svg>
+            </div>
+          </div>
           <div id="filters" class="sidebar-content d-none flex-column p-3 overflow-auto">
             <div class="dropdown" id="filter-dropdown">
               <button class="btn btn-secondary dropdown-toggle" type="button" id="filter-dropdown-button" data-boundary="viewport" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -81,6 +89,7 @@
     <script type="text/javascript" src="/node_modules/bootstrap-slider/dist/bootstrap-slider.min.js"></script>
     <!-- endbuild -->
     <!-- build:js scripts/main.js -->
+    <script src="scripts/charts.js"></script>
     <script src="scripts/main.js"></script>
     <!-- endbuild -->
   </body>
