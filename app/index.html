@@ -26,39 +26,35 @@
     <!--[if IE]>
       <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
     <![endif]-->
-    <div class="container-fluid" id="container">
-      <header>
-        
-      </header>
+    <div class="container-fluid d-flex flex-column p-0" id="container">
+      <header></header>
       <div class="row no-gutters content">
-        <div class="col-3">
-          <div class="sidebar">
-            <div class="dropdown" id="measure-dropdown">
-              <button class="btn btn-primary dropdown-toggle" type="button" id="measure-dropdown-button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Select a measure
+        <div class="col-3 sidebar d-flex flex-column py-3">
+          <div class="dropdown ml-3" id="measure-dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="measure-dropdown-button" data-boundary="viewport" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Select a measure
+            </button>
+            <div class="dropdown-menu" aria-labelledby="measure-dropdown-button"></div>
+          </div>
+          <h3 id="measure-name" class="p-3"></h3>
+          <div id="map-legend" class="ml-3"></div>
+          <ul class="nav nav-tabs px-3 mt-3" id="sidebar-nav">
+            <li class="nav-item" data-content="charts">
+              <a class="nav-link active" href="#">Charts</a>
+            </li>
+            <li class="nav-item" data-content="filters">
+              <a class="nav-link" href="#">Filters</a>
+            </li>
+          </ul>
+          <div id="charts" class="sidebar-content d-flex flex-column p-3"></div>
+          <div id="filters" class="sidebar-content d-none flex-column p-3 overflow-auto">
+            <div class="dropdown" id="filter-dropdown">
+              <button class="btn btn-secondary dropdown-toggle" type="button" id="filter-dropdown-button" data-boundary="viewport" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fa fa-plus"></i> Add filter
               </button>
-              <div class="dropdown-menu" aria-labelledby="measure-dropdown-button"></div>
+              <div class="dropdown-menu" aria-labelledby="filter-dropdown-button"></div>
             </div>
-            <h3 id="measure-name"></h3>
-            <div id="map-legend"></div>
-            <ul class="nav nav-tabs" id="sidebar-nav">
-              <li class="nav-item" data-content="charts">
-                <a class="nav-link active" href="#">Charts</a>
-              </li>
-              <li class="nav-item" data-content="filters">
-                <a class="nav-link" href="#">Filters</a>
-              </li>
-            </ul>
-            <div id="charts" class="sidebar-content"></div>
-            <div id="filters" class="sidebar-content">
-              <div class="dropdown" id="filter-dropdown">
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="filter-dropdown-button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  <i class="fa fa-plus"></i> Add filter
-                </button>
-                <div class="dropdown-menu" aria-labelledby="filter-dropdown-button"></div>
-              </div>
-              <div class="sidebar-content-inner"></div>
-            </div>
+            <div class="sidebar-content-inner"></div>
           </div>
         </div>
         <div class="map-container col">

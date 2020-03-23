@@ -363,17 +363,17 @@ const updateFilterDropdown = () => {
 
 const addFilter = (measure) => {
   const filterCard = $('<div>')
-    .attr('class', 'card filter-card small')
+    .attr('class', 'card filter-card small d-flex flex-column my-3 px-2 pb-2 pt-3')
     .attr('data-measure', measure.key)
     .appendTo('#filters .sidebar-content-inner');
 
   $('<h6>')
-    .attr('class', 'card-title')
+    .attr('class', 'card-title pr-3')
     .html(measure.label)
     .appendTo(filterCard);
 
   const filterContent = $('<div>')
-    .attr('class', 'filter-content')
+    .attr('class', 'filter-content d-flex flex-column justify-content-center')
     .appendTo(filterCard);
 
   $('<i>')
@@ -492,10 +492,11 @@ const init = () => {
   getMeasures();
 
   $('#sidebar-nav .nav-link').click(function() {
-    $('#sidebar-nav .nav-link, .sidebar-content').removeClass('active');
+    $('#sidebar-nav .nav-link').removeClass('active');
+    $('.sidebar-content').removeClass('d-flex').addClass('d-none');
     $(this).addClass('active');
     const content = $(this).parent().attr('data-content');
-    $(`#${content}`).addClass('active');
+    $(`#${content}`).removeClass('d-none').addClass('d-flex');
   });
 
   $('input.slider').slider({
