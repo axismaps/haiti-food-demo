@@ -222,6 +222,10 @@ const Histogram = function (){
   var yScale = d3.scaleLinear()
     .range([_maxHeight, _maxHeight - _minHeight, 0]);
 
+  var yAxis = d3.axisLeft().tickFormat(d3.format('.1s'));
+  var xAxisContainer;
+  var yAxisContainer;
+
   var rect;
 
   var binWidth = 5;
@@ -239,6 +243,7 @@ const Histogram = function (){
     const domain = [0].concat(d3.extent(_data, _valueFunc));
     heightScale.domain(domain);
     yScale.domain(domain);
+    yAxis.scale(yScale).ticks(2);
     draw();
     return histo;
   }
@@ -322,15 +327,16 @@ const Histogram = function (){
     if ( _g ) _g.remove();
     _g = container.append( 'g' )
       .attr( 'class', 'histogram' )
-      .attr( 'transform', 'translate(' + _offset + ',' + _offset + ')');
-    container.append('path')
-      .attr('d', `M${_offset},${_maxHeight + _offset}H${_width}`)
-      .attr('class', 'histogram-axis histogram-x-axis')
-      .style('fill', 'none')
-    container.append('path')
-      .attr('d', `M${_offset},${_maxHeight + _offset}V-${_width}`)
-      .attr('class', 'histogram-axis histogram-y-axis')
-      .style('fill', 'none')
+      .attr( 'transform', 'translate(' + 8 * _offset + ',' + _offset + ')');
+    xAxisContainer = container.append('g')
+      .attr('class', 'histogram-x-axis')
+      .attr('transform', `translate(${8 * _offset}, ${Math.round(_maxHeight + _offset) + .5})`);
+    xAxisContainer.append('path')
+      .attr('class', 'axis')
+      .attr('d', 'M0,0');
+    yAxisContainer = container.append('g')
+      .attr('transform', `translate(${8 * _offset}, ${_offset})`);
+
     rect = _g.selectAll('rect');
     draw();
   }
@@ -355,6 +361,29 @@ const Histogram = function (){
     rect
       .attr('fill',function(d){ return _colorFunc(d) })
       .attr('stroke',function(d){ return _strokeFunc(d) });
+
+    const ticks = xAxisContainer.selectAll('g')
+      .data(_data, _keyFunc ? function(d){ return _keyFunc(d) } : undefined );
+
+    newTicks = ticks.enter()
+      .append('g');
+
+    newTicks.append('path')
+      .attr('d', 'M0,0V5');
+
+    newTicks.append('text')
+      .attr('y', 20)
+      .attr('text-anchor', 'middle');
+    
+    ticks.exit().remove();
+
+    xAxisContainer.selectAll('g').attr('transform', (d, i) => `translate(${Math.floor(binWidth * i) + 1.5}, 0)`)
+      .select('text')
+      .text(d => d.value);
+
+    xAxisContainer.select('path.axis')
+      .attr('d', `M0,0H${binWidth * _data.length}`);
+
     if ( _transition ){
       rect.transition()
         .style( 'display', 'block' )
@@ -366,6 +395,7 @@ const Histogram = function (){
         .on('end',function(d){
           if ( !_valueFunc(d) ) d3.select(this).style('display','none');
         });
+      yAxisContainer.transition().duration(_duration).call(yAxis);
     } else {
       rect
         .each(function(d, i) { this._current = d; })
@@ -378,6 +408,7 @@ const Histogram = function (){
           if ( !_valueFunc(d) ) return 'none';
           return 'block';
         });
+      yAxisContainer.transition().call(yAxis);
     }
         
   }

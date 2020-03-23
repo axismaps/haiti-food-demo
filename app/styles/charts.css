@@ -1,3 +1,12 @@
-.histogram-axis {
+.histogram-x-axis path {
+  stroke: #333;
+  fill: none;
+}
+
+.histogram-x-axis text {
+  font-size: 10px;
+}
+
+path.domain {
   stroke: #333;
 }

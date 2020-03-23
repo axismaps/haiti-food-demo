@@ -596,8 +596,8 @@ const addChart = (measure) => {
         .data(chartData);
 
       d3.select(chartContent[0]).append('svg')
-        .attr('width', 200)
-        .attr('height', 70)
+        .attr('width', 270)
+        .attr('height', 120)
         .call(histogram);
     }
   }
