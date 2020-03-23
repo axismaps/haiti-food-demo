@@ -119,14 +119,30 @@ let measures;
 let currentMeasure;
 let currentMeasureName = 'hdvi';
 let currentUnit = 'departement';
+let hoveredUnit = null;
 
-const apiBase = 'https://simast.herokuapp.com/v1/data/query/';
+const apiBase = 'https://simast.herokuapp.com/v1/data/';
 
 const cachedData = {};
 let currentData = null;
 
+const cachedChartData = {};
+let currentChartData = null;
+const mainDonut = Donut()
+  .value(d => d.count)
+  .key(d => d.value)
+  .sort((a, b) => b.value - a.value)
+  .color(d => categoricalColors[d.value - 1]);
+d3.select('.main-donut svg')
+  .call(mainDonut);
+
+const mainHistogram = Histogram()
+  .value(d => d.count)
+d3.select('.main-histogram svg')
+  .call(mainHistogram);
+
 let choroplethBreaks = [.1, .2, .3, .4];
-const categoricalColors = d3.schemeSet3;
+const categoricalColors = d3.schemeSet3.concat(d3.schemeSet1);
 const choroplethColors = d3.schemeBlues[5];
 let fillStyle = '#ccc';
 
@@ -199,6 +215,18 @@ const updateMap = () => {
   }
 };
 
+const updateChart = () => {
+  if (currentMeasure.type === 'list') {
+    mainDonut.data(currentChartData);
+    $('.main-donut').show();
+    $('.main-histogram').hide();
+  } else {
+    mainHistogram.data(currentChartData);
+    $('.main-donut').hide();
+    $('.main-histogram').show();
+  }
+}
+
 const requestData = () => {
   if (!filters.length && cachedData[currentMeasureName]) {
     currentData = cachedData[currentMeasureName];
@@ -206,7 +234,7 @@ const requestData = () => {
   } else {
     $('#loading').show();
     const filterBody = filters.reduce((flatArray, filter) => flatArray.concat(filter.values), []);
-    d3.json(`${apiBase}${currentMeasureName}`, {
+    d3.json(`${apiBase}/query/${currentMeasureName}`, {
       method: 'POST',
       headers: {
         'Content-type': 'application/json; charset=UTF-8'
@@ -230,7 +258,25 @@ const requestData = () => {
       $('#loading').hide();
     });
   }
-}
+};
+
+const requestChartData = (id) => {
+  // store these before request, on the off chance they change before completion
+  const unit = currentUnit;
+  const measure = currentMeasureName;
+  return d3.json(`${apiBase}/chart/${currentMeasureName}`, {
+    method: 'POST',
+    headers: {
+      'Content-type': 'application/json; charset=UTF-8'
+    },
+    body: id ? JSON.stringify([['=', unit, id]]) : null
+  }).then((json) => {
+    if (!cachedChartData[measure]) cachedChartData[measure] = {};
+    if (!id) cachedChartData[measure].all = json;
+    else cachedChartData[measure][id] = json;
+    return json;
+  });
+};
 
 const getMeasures = () => {
   d3.json('https://simast.herokuapp.com/v1/data/fields').then((json) => {
@@ -267,6 +313,16 @@ const updateMeasure = (measure) => {
   updateFilterDropdown();
   $('#measure-name').html(currentMeasure.label);
   requestData();
+  if (cachedChartData[currentMeasureName]) {
+    currentChartData = cachedChartData[currentMeasureName].all;
+    updateChart();
+  } else {
+    requestChartData().then((json) => {
+      currentChartData = json;
+      updateChart();
+    });
+  }
+  
 };
 
 const updateUnit = (unit) => {
@@ -279,6 +335,16 @@ const updateUnit = (unit) => {
 *** PROBE METHODS ***
 
 */
+
+const handleMouseover = (e) => {
+  if (e.features.length) {
+    const feature = e.features[0];
+    hoveredUnit = feature.properties.id;
+    if (!cachedChartData[currentMeasureName] || !cachedChartData[currentMeasureName][hoveredUnit]) {
+      requestChartData(hoveredUnit);
+    }
+  }
+}
 
 const handleMousemove = (e) => {
   if (e.features.length) {
@@ -343,6 +409,7 @@ const showProbe = (position, title, content) => {
 };
 
 const hideProbe = () => {
+  hoveredUnit = null;
   $('#probe').hide();
 }
 
@@ -470,11 +537,14 @@ const init = () => {
     .addLayer(departementLineLayer, 'road-label')
     .addLayer(communeLineLayer, 'road-label')
     .addLayer(sectionLineLayer, 'road-label')
-    // probe mouse events
+    // mouse events
+    .on('mouseover', 'departement', handleMouseover)
     .on('mousemove', 'departement', handleMousemove)
     .on('mouseout', 'departement', hideProbe)
+    .on('mouseover', 'commune', handleMouseover)
     .on('mousemove', 'commune', handleMousemove)
     .on('mouseout', 'commune', hideProbe)
+    .on('mouseover', 'section', handleMouseover)
     .on('mousemove', 'section', handleMousemove)
     .on('mouseout', 'section', hideProbe)
     // zoom event: update geography level
