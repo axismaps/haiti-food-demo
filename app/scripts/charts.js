@@ -214,7 +214,7 @@ const Histogram = function (){
     _strokeFunc = function(){ return '#fff' },
     _keyFunc,
     _transition = true,
-    _duration = 750;
+    _duration = 400;
 
   var heightScale = d3.scaleLinear()
     .range([0, _minHeight, _maxHeight]);

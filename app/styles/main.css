@@ -52,7 +52,8 @@ header {
   display: flex;
 }
 
-.filter-card .fa-times {
+.filter-card .fa-times,
+.chart-card .fa-times{
   position: absolute;
   top: 10px;
   right: 10px;

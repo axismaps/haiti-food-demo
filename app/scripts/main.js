@@ -260,20 +260,19 @@ const requestData = () => {
   }
 };
 
-const requestChartData = (id) => {
+const requestChartData = (measureName = currentMeasureName, id) => {
   // store these before request, on the off chance they change before completion
   const unit = currentUnit;
-  const measure = currentMeasureName;
-  return d3.json(`${apiBase}/chart/${currentMeasureName}`, {
+  return d3.json(`${apiBase}/chart/${measureName}`, {
     method: 'POST',
     headers: {
       'Content-type': 'application/json; charset=UTF-8'
     },
     body: id ? JSON.stringify([['=', unit, id]]) : null
   }).then((json) => {
-    if (!cachedChartData[measure]) cachedChartData[measure] = {};
-    if (!id) cachedChartData[measure].all = json;
-    else cachedChartData[measure][id] = json;
+    if (!cachedChartData[measureName]) cachedChartData[measureName] = {};
+    if (!id) cachedChartData[measureName].all = json;
+    else cachedChartData[measureName][id] = json;
     return json;
   });
 };
@@ -298,6 +297,15 @@ const getMeasures = () => {
       .attr('href', '#')
       .html(d => d.label)
       .on('click', addFilter);
+
+    d3.select('#chart-dropdown .dropdown-menu').selectAll('a')
+      .data(measures)
+      .enter()
+      .append('a')
+      .attr('class', 'dropdown-item')
+      .attr('href', '#')
+      .html(d => d.label)
+      .on('click', addChart);
 
     currentMeasure = measures.find(d => d.key === 'hdvi');
     currentMeasureName = currentMeasure.key;
@@ -336,16 +344,6 @@ const updateUnit = (unit) => {
 
 */
 
-const handleMouseover = (e) => {
-  if (e.features.length) {
-    const feature = e.features[0];
-    hoveredUnit = feature.properties.id;
-    if (!cachedChartData[currentMeasureName] || !cachedChartData[currentMeasureName][hoveredUnit]) {
-      requestChartData(hoveredUnit);
-    }
-  }
-}
-
 const handleMousemove = (e) => {
   if (e.features.length) {
     const feature = e.features[0];
@@ -361,6 +359,30 @@ const handleMousemove = (e) => {
       }
     }
     showProbe([pageX, pageY], feature.properties.name, `${currentMeasure.label}: ${formatted}`);        
+    
+    // get chart data
+    if (hoveredUnit !== feature.properties.id) {
+      hoveredUnit = feature.properties.id;
+      if (!currentData[feature.properties.id]) {
+        // no data. return to overview chart
+        hoveredUnit = null;
+        currentChartData = cachedChartData[currentMeasureName].all;
+        updateChart();
+      } else if (!cachedChartData[currentMeasureName] || !cachedChartData[currentMeasureName][hoveredUnit]) {
+        // need to fetch chart data for this unit
+        requestChartData(currentMeasureName, hoveredUnit).then((json) => {
+          // hover may have changed by now; only draw chart if still current
+          if (hoveredUnit === feature.properties.id) {
+            currentChartData = json;
+            updateChart();
+          }
+        });
+      } else {
+        // chart data has previously been cached
+        currentChartData = cachedChartData[currentMeasureName][hoveredUnit];
+        updateChart();
+      }
+    }
   }
 }
 
@@ -408,8 +430,10 @@ const showProbe = (position, title, content) => {
   $('#probe').show();
 };
 
-const hideProbe = () => {
+const handleMouseout = () => {
   hoveredUnit = null;
+  currentChartData = cachedChartData[currentMeasureName].all;
+  updateChart();
   $('#probe').hide();
 }
 
@@ -525,6 +549,77 @@ const removeFilter = (key) => {
 
 /*
 
+*** CHART UI METHODS ***
+
+*/
+
+const addChart = (measure) => {
+  const chartCard = $('<div>')
+    .attr('class', 'card chart-card small d-flex flex-column my-3 px-2 pb-2 pt-3')
+    .attr('data-measure', measure.key)
+    .appendTo('#charts .sidebar-content-inner');
+
+  $('<h6>')
+    .attr('class', 'card-title pr-3')
+    .html(measure.label)
+    .appendTo(chartCard);
+
+  const chartContent = $('<div>')
+    .attr('class', 'filter-content d-flex flex-column justify-content-center')
+    .appendTo(chartCard);
+
+  $('<i>')
+    .attr('class', 'fa fa-times')
+    .appendTo(chartCard)
+    .on('click', () => {
+      removeChart(measure.key);
+    });
+
+  let chartData;
+
+  const drawChart = () => {
+    if (measure.type === 'list') {
+      const donut = Donut()
+        .value(d => d.count)
+        .key(d => d.value)
+        .sort((a, b) => b.value - a.value)
+        .color(d => categoricalColors[d.value - 1])
+        .data(chartData);
+
+      d3.select(chartContent[0]).append('svg')
+        .attr('width', 130)
+        .attr('height', 130)
+        .call(donut);
+    } else {
+      const histogram = Histogram()
+        .value(d => d.count)
+        .data(chartData);
+
+      d3.select(chartContent[0]).append('svg')
+        .attr('width', 200)
+        .attr('height', 70)
+        .call(histogram);
+    }
+  }
+
+  if (cachedChartData[measure.key]) {
+    chartData =  cachedChartData[measure.key].all;
+    drawChart();
+  } else {
+    requestChartData(measure.key)
+      .then((json) => {
+        chartData = json;
+        drawChart();
+      });
+  }
+}
+
+const removeChart = (key) => {
+  $(`.chart-card[data-measure="${key}"]`).remove();
+}
+  
+/*
+
 *** INITIALIZATION AND EVENTS ***
 
 */
@@ -538,15 +633,12 @@ const init = () => {
     .addLayer(communeLineLayer, 'road-label')
     .addLayer(sectionLineLayer, 'road-label')
     // mouse events
-    .on('mouseover', 'departement', handleMouseover)
     .on('mousemove', 'departement', handleMousemove)
-    .on('mouseout', 'departement', hideProbe)
-    .on('mouseover', 'commune', handleMouseover)
+    .on('mouseout', 'departement', handleMouseout)
     .on('mousemove', 'commune', handleMousemove)
-    .on('mouseout', 'commune', hideProbe)
-    .on('mouseover', 'section', handleMouseover)
+    .on('mouseout', 'commune', handleMouseout)
     .on('mousemove', 'section', handleMousemove)
-    .on('mouseout', 'section', hideProbe)
+    .on('mouseout', 'section', handleMouseout)
     // zoom event: update geography level
     .on('zoomend', () => {
       const z = map.getZoom();
