@@ -216,6 +216,7 @@ const updateMap = () => {
 };
 
 const updateChart = () => {
+  if (!currentChartData) return;
   if (currentMeasure.type === 'list') {
     mainDonut.data(currentChartData);
     $('.main-donut').show();
@@ -263,13 +264,14 @@ const requestData = () => {
 const requestChartData = (measureName = currentMeasureName, id) => {
   // store these before request, on the off chance they change before completion
   const unit = currentUnit;
-  return d3.json(`${apiBase}/chart/${measureName}`, {
+  return d3.json(`${apiBase}chart/${measureName}`, {
     method: 'POST',
     headers: {
       'Content-type': 'application/json; charset=UTF-8'
     },
     body: id ? JSON.stringify([['=', unit, id]]) : null
-  }).then((json) => {
+  }).catch(console.log)
+  .then((json) => {
     if (!cachedChartData[measureName]) cachedChartData[measureName] = {};
     if (!id) cachedChartData[measureName].all = json;
     else cachedChartData[measureName][id] = json;
