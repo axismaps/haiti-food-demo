@@ -16,7 +16,7 @@ const extent = new mapboxgl.LngLatBounds(
 const maxZooms = {
   departement: 8,
   commune: 9,
-  section: 24,
+  section: 10,
 };
 
 const map = new mapboxgl.Map({
@@ -92,6 +92,7 @@ const sectionLayer = {
   'source-layer': 'section',
   type: 'fill',
   minzoom: maxZooms.commune,
+  maxZoom: maxZooms.section,
   paint: {
     'fill-color': '#ccc',
     'fill-opacity': .5
@@ -106,6 +107,30 @@ const sectionLineLayer = {
   minzoom: maxZooms.commune,
   paint: {
     'line-color': '#ccc',
+  }
+};
+
+const gridSource = {
+  type: 'geojson',
+  data: {
+    type: 'FeatureCollection',
+    features: [],
+  }
+};
+
+const gridLayer = {
+  id: 'grid',
+  source: 'grid-source',
+  type: 'circle',
+  minzoom: maxZooms.section,
+  paint: {
+    'circle-radius': [
+      'sqrt',
+      ['get', 'count']
+    ],
+    'circle-opacity': .75,
+    'circle-stroke-color': '#fff',
+    'circle-stroke-width': 1
   }
 };
 
@@ -125,6 +150,9 @@ const apiBase = 'https://simast.herokuapp.com/v1/data/';
 
 const cachedData = {};
 let currentData = null;
+
+const cachedGridData = {};
+let currentGridData = null;
 
 const cachedChartData = {};
 let currentChartData = null;
@@ -148,31 +176,8 @@ let fillStyle = '#ccc';
 
 let filters = [];
 
-const updateMap = () => {
-  let idProp = 'id';
-
-  const mapData = {};
-  const allVals = [];
-  Object.values(currentData).forEach((d) => {
-    mapData[d.id] = d.value;
-    allVals.push(d.value);
-  });
-
+const updateChoroplethLegend = () => {
   if (currentMeasure.type !== 'list') {
-    const extent = d3.extent(allVals);
-    const scale = d3.scaleQuantize().domain(d3.extent(allVals)).range(choroplethColors).nice();
-    choroplethBreaks = scale.thresholds();
-    fillStyle = ['case',
-      ['==', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], null], '#ccc',
-      ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[0]], choroplethColors[0],
-      ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[1]], choroplethColors[1],
-      ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[2]], choroplethColors[2],
-      ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[3]], choroplethColors[3],
-      choroplethColors[4]
-    ];
-
-    map.setPaintProperty(currentUnit, 'fill-color', fillStyle);
-
     const swatches = d3.select('#map-legend').selectAll('.legend-swatch')
       .data(choroplethBreaks.concat(null))
     swatches.enter()
@@ -187,18 +192,6 @@ const updateMap = () => {
       .select('span')
       .html((d, i) => i === choroplethBreaks.length ? '' : d3.format('.2~r')(d));
   } else {
-    fillStyle = ['case',
-      ['==', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], null], '#ccc'
-    ];
-
-    currentMeasure.values.forEach((value, i) => {
-      if (i >= categoricalColors.length) return; // for now just skip an excessive number of categories
-      fillStyle.push(['==', ['round', ['get', ['to-string', ['get', idProp]], ['literal', mapData]]], i + 1], categoricalColors[i]);
-    });
-    fillStyle.push('#ccc');
-
-    map.setPaintProperty(currentUnit, 'fill-color', fillStyle);
-
     const swatches = d3.select('#map-legend').selectAll('.legend-swatch')
       .data(currentMeasure.values)
     swatches.enter()
@@ -212,7 +205,102 @@ const updateMap = () => {
       .style('background-color', (d, i) => categoricalColors[i])
       .select('span')
       .html(d => d);
+  }  
+}
+
+const updateGrid = () => {
+  gridSource.data = currentGridData;
+  const allVals = currentGridData.features.map(f => f.properties.value);
+  const extent = d3.extent(allVals);
+  const scale = d3.scaleQuantize().domain(extent).range(choroplethColors).nice();
+  choroplethBreaks = scale.thresholds();
+  if (map.getLayer('grid')) map.removeLayer('grid');
+  if (map.getSource('grid-source')) {
+    map.removeSource('grid-source');
   }
+
+  map.addSource('grid-source', gridSource);
+  map.addLayer(gridLayer);
+
+  map.on('mousemove', 'grid', (e) => {
+    if (e.features.length) {
+      const features = [...e.features];
+      features.sort((a, b) => a.properties.count - b.properties.count);
+      const feature = features[0];
+      const { pageX, pageY } = e.originalEvent;
+      const valText = currentMeasure.type === 'list' ? currentMeasure.values[feature.properties.value - 1] : `Value: ${d3.format('.2~r')(feature.properties.value)}`;
+      showProbe([pageX, pageY], feature.properties.name, `${valText}<br>Count: ${d3.format(',')(feature.properties.count)}`);      
+    }
+  }).on('mouseout', 'grid', handleMouseout);
+
+  if (currentMeasure.type !== 'list') {
+    const fill = ['case',
+      ['==', ['get', 'value'], null], '#ccc',
+      ['<', ['get', 'value'], choroplethBreaks[0]], choroplethColors[0],
+      ['<', ['get', 'value'], choroplethBreaks[1]], choroplethColors[1],
+      ['<', ['get', 'value'], choroplethBreaks[2]], choroplethColors[2],
+      ['<', ['get', 'value'], choroplethBreaks[3]], choroplethColors[3],
+      choroplethColors[4]
+    ];
+
+    map.setPaintProperty('grid', 'circle-color', fill);
+  } else {
+    const fill = ['case',
+      ['==', ['get', 'value'], null], '#ccc'
+    ];
+    currentMeasure.values.forEach((value, i) => {
+      if (i >= categoricalColors.length) return; // for now just skip an excessive number of categories
+      fill.push(['==', ['get', 'value'], i + 1], categoricalColors[i]);
+    });
+    fill.push('#ccc');
+    map.setPaintProperty('grid', 'circle-color', fill);
+  }
+  updateChoroplethLegend();
+}
+
+const updateMap = () => {
+  if (currentUnit === 'grid') {
+    map.setPaintProperty('section', 'fill-color', '#ccc');
+    updateGrid();
+    return;
+  }
+  let idProp = 'id';
+
+  const mapData = {};
+  const allVals = [];
+  Object.values(currentData).forEach((d) => {
+    mapData[d.id] = d.value;
+    allVals.push(d.value);
+  });
+
+  if (currentMeasure.type !== 'list') {
+    const extent = d3.extent(allVals);
+    const scale = d3.scaleQuantize().domain(extent).range(choroplethColors).nice();
+    choroplethBreaks = scale.thresholds();
+    fillStyle = ['case',
+      ['==', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], null], '#ccc',
+      ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[0]], choroplethColors[0],
+      ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[1]], choroplethColors[1],
+      ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[2]], choroplethColors[2],
+      ['<', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], choroplethBreaks[3]], choroplethColors[3],
+      choroplethColors[4]
+    ];
+
+    map.setPaintProperty(currentUnit, 'fill-color', fillStyle);
+  } else {
+    fillStyle = ['case',
+      ['==', ['get', ['to-string', ['get', idProp]], ['literal', mapData]], null], '#ccc'
+    ];
+
+    currentMeasure.values.forEach((value, i) => {
+      if (i >= categoricalColors.length) return; // for now just skip an excessive number of categories
+      fillStyle.push(['==', ['round', ['get', ['to-string', ['get', idProp]], ['literal', mapData]]], i + 1], categoricalColors[i]);
+    });
+    fillStyle.push('#ccc');
+
+    map.setPaintProperty(currentUnit, 'fill-color', fillStyle);
+  }
+  updateChoroplethLegend();
 };
 
 const updateChart = () => {
@@ -228,14 +316,14 @@ const updateChart = () => {
   }
 }
 
-const requestData = () => {
+const requestChoroplethData = () => {
   if (!filters.length && cachedData[currentMeasureName]) {
     currentData = cachedData[currentMeasureName];
     updateMap();
   } else {
     $('#loading').show();
     const filterBody = filters.reduce((flatArray, filter) => flatArray.concat(filter.values), []);
-    d3.json(`${apiBase}/query/${currentMeasureName}`, {
+    d3.json(`${apiBase}query/${currentMeasureName}`, {
       method: 'POST',
       headers: {
         'Content-type': 'application/json; charset=UTF-8'
@@ -258,6 +346,49 @@ const requestData = () => {
       updateMap();
       $('#loading').hide();
     });
+  }
+}
+
+const requestGridData = () => {
+  if (!filters.length && cachedGridData[currentMeasureName]) {
+    currentGridData = cachedGridData[currentMeasureName];
+    updateMap();
+  } else {
+    $('#loading').show();
+    const filterBody = filters.reduce((flatArray, filter) => flatArray.concat(filter.values), []);
+    d3.json(`${apiBase}grid/${currentMeasureName}/0.025`, {
+      method: 'POST',
+      headers: {
+        'Content-type': 'application/json; charset=UTF-8'
+      },
+      body: filterBody.length ? JSON.stringify(filterBody) : null
+    }).then((json) => { 
+      // const indexedData = {};
+      // Object.values(json).forEach((level) => {
+      //   level.forEach((d) => {
+      //     indexedData[d.id] = d;
+      //   })
+
+      // });
+      json.features.sort((a,b) => b.properties.count - a.properties.count);
+      if (!filters.length) {
+        if (!cachedGridData[currentMeasureName]) cachedGridData[currentMeasureName] = {};
+        cachedGridData[currentMeasureName] = json;
+      }
+      currentGridData = json;
+      
+      // currentData = indexedData;
+      updateMap();
+      $('#loading').hide();
+    });
+  }
+}
+
+const requestData = () => {
+  if (map.getZoom() >= 10) {
+    requestGridData();
+  } else {
+    requestChoroplethData();
   }
 };
 
@@ -337,7 +468,12 @@ const updateMeasure = (measure) => {
 
 const updateUnit = (unit) => {
   currentUnit = unit;
-  map.setPaintProperty(currentUnit, 'fill-color', fillStyle);
+  if (unit === 'grid') {
+    requestData();
+  } else {
+    map.setPaintProperty(currentUnit, 'fill-color', fillStyle);
+  }
+  
 }
 
 /*
@@ -347,6 +483,7 @@ const updateUnit = (unit) => {
 */
 
 const handleMousemove = (e) => {
+  if (currentUnit === 'grid') return;
   if (e.features.length) {
     const feature = e.features[0];
     const { pageX, pageY } = e.originalEvent;
@@ -368,6 +505,7 @@ const handleMousemove = (e) => {
       if (!currentData[feature.properties.id]) {
         // no data. return to overview chart
         hoveredUnit = null;
+        if (!cachedChartData[currentMeasureName]) return;
         currentChartData = cachedChartData[currentMeasureName].all;
         updateChart();
       } else if (!cachedChartData[currentMeasureName] || !cachedChartData[currentMeasureName][hoveredUnit]) {
@@ -434,8 +572,11 @@ const showProbe = (position, title, content) => {
 
 const handleMouseout = () => {
   hoveredUnit = null;
-  currentChartData = cachedChartData[currentMeasureName].all;
-  updateChart();
+  if (cachedChartData[currentMeasureName]) {
+    currentChartData = cachedChartData[currentMeasureName].all;
+    updateChart();
+  }
+  
   $('#probe').hide();
 }
 
@@ -648,9 +789,11 @@ const init = () => {
         updateUnit('departement');
       } else if (z > maxZooms.departement && z <= maxZooms.commune && currentUnit !== 'commune') {
         updateUnit('commune');
-      } else if (z > maxZooms.commune && currentUnit !== 'section') {
+      } else if (z > maxZooms.commune && z <= maxZooms.section && currentUnit !== 'section') {
         updateUnit('section');
-      } 
+      } else if (z > maxZooms.section && currentUnit !== 'grid') {
+        updateUnit('grid');
+      }
     });
 
   getMeasures();
