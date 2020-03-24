@@ -831,10 +831,10 @@ const init = () => {
 
   $('#sidebar-nav .nav-link').click(function() {
     $('#sidebar-nav .nav-link').removeClass('active');
-    $('.sidebar-content').removeClass('d-flex').addClass('d-none');
+    $('.charts, .filters').removeClass('d-flex').addClass('d-none');
     $(this).addClass('active');
     const content = $(this).parent().attr('data-content');
-    $(`#${content}`).removeClass('d-none').addClass('d-flex');
+    $(`.${content}`).addClass('d-flex');
   });
 
   $('input.slider').slider({

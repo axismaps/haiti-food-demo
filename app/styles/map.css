@@ -11,12 +11,13 @@
 .legend-swatch span {
   position: relative;
   left: 35px;
-  top: 13px;
+  top: 11px;
   white-space: nowrap;
+  font-size: 12px;
 }
 
 .legend-swatch.categorical span {
-  top: -6px;
+  top: -2px;
 }
 
 .chart-legend .legend-swatch {
@@ -29,6 +30,10 @@
   font-size: 10px;
 }
 
+.chart-legend .legend-swatch.categorical span {
+  top: -6px;
+}
+
 .legend-swatch span::before {
   content: '';
   width: 8px;
@@ -36,13 +41,14 @@
   height: 1px;
   display: block;
   left: -10px;
-  top: 12px;
+  top: 14px;
   position: relative;
 }
 
 .chart-legend .legend-swatch span::before {
   left: -8px;
   width: 6px;
+  top: 12px;
 }
 
 .legend-swatch:last-child span::before {
