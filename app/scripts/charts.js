@@ -28,7 +28,8 @@ const Donut = function(){
     _strokeFunc = function(){ return '#fff' },
     _keyFunc,
     _transition = true,
-    _duration = 750;
+    _duration = 400,
+    _events = [];
 
   var arc = d3.arc()
     .outerRadius(_outerRadius)
@@ -143,6 +144,24 @@ const Donut = function(){
     return dnut;
   }
 
+  dnut.on = function(name, listener) {
+    _events.push([name, listener]);
+    if (_g) {
+      updateEvents();
+    }
+    return dnut;
+  }
+
+  function updateEvents() {
+    _g.selectAll('a')
+      .each(function() {
+        const el = d3.select(this);
+        _events.forEach((e) => {
+          el.on(e[0], e[1]);
+        });
+      });
+  }
+
   function create(){
     if ( !container ) return;
     if ( _g ) _g.remove();
@@ -167,6 +186,8 @@ const Donut = function(){
         .each(function(d, i) { this._current = d; });
 
     path = _g.selectAll('a');
+
+    updateEvents();
 
     path.select('path')
         .attr('fill',function(d){ return _colorFunc(d.data) })
@@ -214,7 +235,8 @@ const Histogram = function (){
     _strokeFunc = function(){ return '#fff' },
     _keyFunc,
     _transition = true,
-    _duration = 400;
+    _duration = 400,
+    _events = [];
 
   var heightScale = d3.scaleLinear()
     .range([0, _minHeight, _maxHeight]);
@@ -322,6 +344,24 @@ const Histogram = function (){
     return histo;
   }
 
+  histo.on = function(name, listener) {
+    _events.push([name, listener]);
+    if (_g) {
+      updateEvents();
+    }
+    return histo;
+  }
+
+  function updateEvents() {
+    _g.selectAll('rect')
+      .each(function() {
+        const el = d3.select(this);
+        _events.forEach((e) => {
+          el.on(e[0], e[1]);
+        });
+      });
+  }
+
   function create(){
     if ( !container ) return;
     if ( _g ) _g.remove();
@@ -361,6 +401,8 @@ const Histogram = function (){
     rect
       .attr('fill',function(d){ return _colorFunc(d) })
       .attr('stroke',function(d){ return _strokeFunc(d) });
+
+    updateEvents();
 
     const ticks = xAxisContainer.selectAll('g')
       .data(_data, _keyFunc ? function(d){ return _keyFunc(d) } : undefined );

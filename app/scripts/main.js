@@ -160,12 +160,22 @@ const mainDonut = Donut()
   .value(d => d.count)
   .key(d => d.value)
   .sort((a, b) => b.value - a.value)
-  .color(d => categoricalColors[d.value - 1]);
+  .color(d => categoricalColors[d.value - 1])
+  .on('mousemove', (d) => {
+    const { pageX, pageY } = d3.event;
+    showProbe([pageX, pageY], currentMeasure.values[d.data.value - 1], d3.format(',')(d.data.count)); 
+  })
+  .on('mouseout', () => { $('#probe').hide() });
 d3.select('.main-donut svg')
   .call(mainDonut);
 
 const mainHistogram = Histogram()
   .value(d => d.count)
+  .on('mousemove', (d) => {
+    const { pageX, pageY } = d3.event;
+    showProbe([pageX, pageY], d3.format(',')(d.count)); 
+  })
+  .on('mouseout', () => { $('#probe').hide() });
 d3.select('.main-histogram svg')
   .call(mainHistogram);
 
@@ -363,13 +373,6 @@ const requestGridData = () => {
       },
       body: filterBody.length ? JSON.stringify(filterBody) : null
     }).then((json) => { 
-      // const indexedData = {};
-      // Object.values(json).forEach((level) => {
-      //   level.forEach((d) => {
-      //     indexedData[d.id] = d;
-      //   })
-
-      // });
       json.features.sort((a,b) => b.properties.count - a.properties.count);
       if (!filters.length) {
         if (!cachedGridData[currentMeasureName]) cachedGridData[currentMeasureName] = {};
@@ -727,16 +730,44 @@ const addChart = (measure) => {
         .key(d => d.value)
         .sort((a, b) => b.value - a.value)
         .color(d => categoricalColors[d.value - 1])
-        .data(chartData);
+        .data(chartData)
+        .on('mousemove', (d) => {
+          const { pageX, pageY } = d3.event;
+          showProbe([pageX, pageY], measure.values[d.data.value - 1], d3.format(',')(d.data.count)); 
+        })
+        .on('mouseout', () => { $('#probe').hide() });
 
       d3.select(chartContent[0]).append('svg')
         .attr('width', 130)
         .attr('height', 130)
+        .attr('class', 'align-self-center')
         .call(donut);
+
+      const legend = d3.select(chartContent[0]).append('div')
+        .attr('class', 'chart-legend');
+
+      const swatches = legend.selectAll('.legend-swatch')
+        .data(measure.values)
+      swatches.enter()
+        .append('div')
+        .attr('class', 'legend-swatch categorical')
+        .append('span');
+      swatches.exit().remove();
+  
+      legend.selectAll('.legend-swatch')
+        .classed('categorical', true)
+        .style('background-color', (d, i) => categoricalColors[i])
+        .select('span')
+        .html(d => d);
     } else {
       const histogram = Histogram()
         .value(d => d.count)
-        .data(chartData);
+        .data(chartData)
+        .on('mousemove', (d) => {
+          const { pageX, pageY } = d3.event;
+          showProbe([pageX, pageY], d3.format(',')(d.count)); 
+        })
+        .on('mouseout', () => { $('#probe').hide() });
 
       d3.select(chartContent[0]).append('svg')
         .attr('width', 270)

@@ -16,7 +16,17 @@
 }
 
 .legend-swatch.categorical span {
-  top: 0;
+  top: -6px;
+}
+
+.chart-legend .legend-swatch {
+  width: 12px;
+  height: 12px;
+}
+
+.chart-legend .legend-swatch span {
+  left: 20px;
+  font-size: 10px;
 }
 
 .legend-swatch span::before {
@@ -28,6 +38,11 @@
   left: -10px;
   top: 12px;
   position: relative;
+}
+
+.chart-legend .legend-swatch span::before {
+  left: -8px;
+  width: 6px;
 }
 
 .legend-swatch:last-child span::before {
