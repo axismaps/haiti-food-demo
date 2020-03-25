@@ -17,13 +17,14 @@ const maxZooms = {
   departement: 8,
   commune: 9,
   section: 10,
+  grid: 12
 };
 
 const map = new mapboxgl.Map({
   container: 'map',
   style: 'mapbox://styles/mapbox/light-v10',
   minZoom: 4,
-  maxZoom: 12,
+  maxZoom: 14,
   maxBounds: extent,
   bounds: extent,
 });
@@ -92,7 +93,7 @@ const sectionLayer = {
   'source-layer': 'section',
   type: 'fill',
   minzoom: maxZooms.commune,
-  maxZoom: maxZooms.section,
+  maxzoom: maxZooms.section,
   paint: {
     'fill-color': '#ccc',
     'fill-opacity': .5
@@ -123,6 +124,7 @@ const gridLayer = {
   source: 'grid-source',
   type: 'circle',
   minzoom: maxZooms.section,
+  maxzoom: maxZooms.grid,
   paint: {
     'circle-radius': [
       'sqrt',
@@ -131,6 +133,24 @@ const gridLayer = {
     'circle-opacity': .75,
     'circle-stroke-color': '#fff',
     'circle-stroke-width': 1
+  }
+};
+
+const pointSource = {
+  type: 'geojson',
+  data: {
+    type: 'FeatureCollection',
+    features: [],
+  }
+};
+
+const pointLayer = {
+  id: 'points',
+  source: 'point-source',
+  type: 'circle',
+  minzoom: maxZooms.grid,
+  paint: {
+    'circle-radius': 3
   }
 };
 
@@ -153,6 +173,9 @@ let currentData = null;
 
 const cachedGridData = {};
 let currentGridData = null;
+
+const cachedPointData = {};
+let currentPointData = null;
 
 const cachedChartData = {};
 let currentChartData = null;
@@ -218,19 +241,19 @@ const updateChoroplethLegend = () => {
   }  
 }
 
+[['>=', 'latitude', 19.70650777862447], ['>=', 'longitude', -72.8842700396045], ['<=', 'latitude', 19.851242477803638], ['<=', 'longitude', -72.72428163628379]]
+
+const updatePoints = () => {
+  map.getSource('point-source').setData(currentGridData);
+};
+
 const updateGrid = () => {
-  gridSource.data = currentGridData;
   const allVals = currentGridData.features.map(f => f.properties.value);
   const extent = d3.extent(allVals);
   const scale = d3.scaleQuantize().domain(extent).range(choroplethColors).nice();
   choroplethBreaks = scale.thresholds();
-  if (map.getLayer('grid')) map.removeLayer('grid');
-  if (map.getSource('grid-source')) {
-    map.removeSource('grid-source');
-  }
 
-  map.addSource('grid-source', gridSource);
-  map.addLayer(gridLayer);
+  map.getSource('grid-source').setData(currentGridData);
 
   map.on('mousemove', 'grid', (e) => {
     if (e.features.length) {
@@ -269,6 +292,11 @@ const updateGrid = () => {
 }
 
 const updateMap = () => {
+  if (currentUnit === 'points') {
+    map.setPaintProperty('section', 'fill-color', '#ccc');
+    updatePoints();
+    return;
+  }
   if (currentUnit === 'grid') {
     map.setPaintProperty('section', 'fill-color', '#ccc');
     updateGrid();
@@ -387,8 +415,33 @@ const requestGridData = () => {
   }
 }
 
+const requestPointData = () => {
+    $('#loading').show();
+    const boundsArray = [];
+    const bounds = map.getBounds().toArray();
+    boundsArray.push(['>=', 'longitude', bounds[0][0]]);
+    boundsArray.push(['>=', 'latitude', bounds[0][1]]);
+    boundsArray.push(['<=', 'longitude', bounds[1][0]]);
+    boundsArray.push(['<=', 'latitude', bounds[1][1]]);
+    const filterBody = filters.reduce((flatArray, filter) => flatArray.concat(filter.values), [])
+      .concat(boundsArray);
+    d3.json(`${apiBase}points/${currentMeasureName}`, {
+      method: 'POST',
+      headers: {
+        'Content-type': 'application/json; charset=UTF-8'
+      },
+      body: filterBody.length ? JSON.stringify(filterBody) : null
+    }).then((json) => { 
+      currentPointData = json;
+      updateMap();
+      $('#loading').hide();
+    });
+}
+
 const requestData = () => {
-  if (map.getZoom() >= 10) {
+  if (map.getZoom() >= maxZooms.grid) {
+    requestPointData();
+  } else if (map.getZoom() >= maxZooms.section) {
     requestGridData();
   } else {
     requestChoroplethData();
@@ -471,7 +524,7 @@ const updateMeasure = (measure) => {
 
 const updateUnit = (unit) => {
   currentUnit = unit;
-  if (unit === 'grid') {
+  if (unit === 'grid' || unit == 'points') {
     requestData();
   } else {
     map.setPaintProperty(currentUnit, 'fill-color', fillStyle);
@@ -800,12 +853,16 @@ const removeChart = (key) => {
 
 const init = () => {
   map.addSource('haiti', geoSource)
+    .addSource('grid-source', gridSource)
+    .addSource('point-source', pointSource)
     .addLayer(departementLayer, 'road-label')
     .addLayer(communeLayer, 'road-label')
     .addLayer(sectionLayer, 'road-label')
     .addLayer(departementLineLayer, 'road-label')
     .addLayer(communeLineLayer, 'road-label')
     .addLayer(sectionLineLayer, 'road-label')
+    .addLayer(gridLayer, 'road-label')
+    .addLayer(pointLayer, 'road-label')
     // mouse events
     .on('mousemove', 'departement', handleMousemove)
     .on('mouseout', 'departement', handleMouseout)
@@ -822,9 +879,14 @@ const init = () => {
         updateUnit('commune');
       } else if (z > maxZooms.commune && z <= maxZooms.section && currentUnit !== 'section') {
         updateUnit('section');
-      } else if (z > maxZooms.section && currentUnit !== 'grid') {
+      } else if (z > maxZooms.section && z <= maxZooms.grid && currentUnit !== 'grid') {
         updateUnit('grid');
+      } else if (z > maxZooms.grid && currentUnit !== 'points') {
+        updateUnit('points');
       }
+    })
+    .on('moveend', () => {
+      if (currentUnit === 'points') requestData();
     });
 
   getMeasures();
