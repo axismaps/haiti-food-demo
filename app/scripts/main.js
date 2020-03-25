@@ -179,6 +179,9 @@ let currentGridData = null;
 const cachedPointData = {};
 let currentPointData = null;
 
+const tableData = {};
+let currentTableData = [];
+
 const cachedChartData = {};
 let currentChartData = null;
 const mainDonut = Donut()
@@ -497,6 +500,43 @@ const requestChartData = (measureName = currentMeasureName, id) => {
   });
 };
 
+const requestTableData = (unit) => {
+  const filterBody = filters.reduce((flatArray, filter) => flatArray.concat(filter.values), []);
+  return d3.json(`${apiBase}table/${currentMeasureName}/${unit || currentUnit}`, {
+    method: 'POST',
+    headers: {
+      'Content-type': 'application/json; charset=UTF-8',
+    },
+    body: filterBody.length ? JSON.stringify(filterBody) : null
+  }).catch(console.log)
+  .then((json) => {
+    // if (!cachedChartData[measureName]) cachedChartData[measureName] = {};
+    // if (!id) cachedChartData[measureName].all = json;
+    // else cachedChartData[measureName][id] = json;
+    //console.log(json)
+    const numColummns = d3.max(Object.values(json).map(d => d.length));
+    const rows = Object.entries(json).map(([id, data]) => [id].concat(data));
+    
+    const tableRows = d3.select('#table tbody').selectAll('tr')
+      .data(rows, d => d[0]);
+
+    tableRows.enter()
+      .append('tr');
+
+    tableRows.exit().remove();
+
+    d3.selectAll('#table tr')
+      .selectAll('td')
+      .data(d => d)
+      .enter()
+      .append('td')
+      .html((d, i) => i === 0 ? d : d3.format(',')(d.count))
+
+    console.log(rows)
+    return json;
+  });
+};
+
 const getMeasures = () => {
   d3.json('https://simast.herokuapp.com/v1/data/fields').then((json) => {
     measures = json;
@@ -540,6 +580,11 @@ const updateMeasure = (measure) => {
   filters = [];
   updateFilterDropdown();
   $('#measure-name').html(currentMeasure.label);
+  if (currentUnit === 'grid' || currentUnit === 'points') {
+    requestTableData('section');
+  } else {
+    requestTableData();
+  }
   requestData();
   if (cachedChartData[currentMeasureName]) {
     currentChartData = cachedChartData[currentMeasureName].all;
@@ -559,6 +604,7 @@ const updateUnit = (unit) => {
     requestData();
   } else {
     map.setPaintProperty(currentUnit, 'fill-color', fillStyle);
+    requestTableData();
   }
   
 }

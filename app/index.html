@@ -32,7 +32,7 @@
         <h2 id="title"></h2>
       </header>
       <div class="row no-gutters content">
-        <div class="col-3 sidebar d-flex flex-column py-3">
+        <div class="col-3 sidebar d-flex flex-column py-3 border-right h-100">
           <div class="dropdown ml-3" id="measure-dropdown">
             <button class="btn btn-primary dropdown-toggle" type="button" id="measure-dropdown-button" data-boundary="viewport" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               Select a measure
@@ -74,8 +74,14 @@
             <div class="sidebar-content-inner"></div>
           </div>
         </div>
-        <div class="map-container col">
-          <div id="map"></div>
+        <div class="map-container col d-flex flex-column h-100">
+          <div id="map" class="h-75 flex-shrink-0"></div>
+          <div id="table" class="overflow-auto">
+            <table class="table table-borderless table-striped">
+              <thead></thead>
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
