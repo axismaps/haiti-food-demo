@@ -150,7 +150,9 @@ const pointLayer = {
   type: 'circle',
   minzoom: maxZooms.grid,
   paint: {
-    'circle-radius': 3
+    'circle-radius': 5,
+    'circle-stroke-color': '#fff',
+    'circle-stroke-width': 1
   }
 };
 
@@ -244,7 +246,36 @@ const updateChoroplethLegend = () => {
 [['>=', 'latitude', 19.70650777862447], ['>=', 'longitude', -72.8842700396045], ['<=', 'latitude', 19.851242477803638], ['<=', 'longitude', -72.72428163628379]]
 
 const updatePoints = () => {
-  map.getSource('point-source').setData(currentGridData);
+  map.getSource('point-source').setData(currentPointData);
+
+  const scale = d3.scaleQuantize().domain([currentMeasure.min, currentMeasure.max]).range(choroplethColors).nice();
+  choroplethBreaks = scale.thresholds();
+
+  if (currentMeasure.type !== 'list') {
+    const fill = ['case',
+      ['==', ['get', 'value'], null], '#ccc',
+      ['<', ['get', 'value'], choroplethBreaks[0]], choroplethColors[0],
+      ['<', ['get', 'value'], choroplethBreaks[1]], choroplethColors[1],
+      ['<', ['get', 'value'], choroplethBreaks[2]], choroplethColors[2],
+      ['<', ['get', 'value'], choroplethBreaks[3]], choroplethColors[3],
+      choroplethColors[4]
+    ];
+    const maxVal = Math.sqrt(currentMeasure.max);
+    map.setPaintProperty('points', 'circle-color', fill)
+      .setPaintProperty('points', 'circle-radius', ['*', ['/', ['sqrt', ['get', 'value']], maxVal], 40]);
+  } else {
+    const fill = ['case',
+      ['==', ['get', 'value'], null], '#ccc'
+    ];
+    currentMeasure.values.forEach((value, i) => {
+      if (i >= categoricalColors.length) return; // for now just skip an excessive number of categories
+      fill.push(['==', ['get', 'value'], i + 1], categoricalColors[i]);
+    });
+    fill.push('#ccc');
+    map.setPaintProperty('points', 'circle-color', fill)
+      .setPaintProperty('points', 'circle-radius', 10);
+  }
+  updateChoroplethLegend();
 };
 
 const updateGrid = () => {
