@@ -526,16 +526,24 @@ const requestTableData = (unit) => {
     const cols = ['Name'].concat(Object.values(json).find(d => d.length === numColummns)
       .map(d => currentMeasure.type === 'list' ? currentMeasure.values[d.value - 1] : d.value));
     
-    d3.select('#table thead tr').selectAll('th')
-      .data(cols)
-      .join('th')
-      .html((d, i) => {
-        if (currentMeasure.type === 'list' || i === 0) {
-          return d;
-        }
-        if (i === cols.length - 1) return `${d}+`;
-        return `${d}–${cols[i + 1]}`;
-      });
+    const headers = d3.select('#table thead tr').selectAll('th')
+      .data(cols);
+
+    console.log(headers)
+    
+    headers.enter().append('th')
+      .append('div');
+
+    headers.exit().remove();
+
+    d3.select('#table thead tr').selectAll('th').each(function(d, i) {
+      let title;
+      if (currentMeasure.type === 'list' || i === 0) {
+        title = d;
+      } else if (i === cols.length - 1) title = `${d}+`;
+      else title = `${d}–${cols[i + 1]}`;
+      d3.select(this).select('div').html(title).attr('title', title);
+    });
 
     const rows = Object.entries(json).map(([id, data]) => [id].concat(data));
     const names = map.querySourceFeatures('haiti', {sourceLayer: unit || currentUnit})
