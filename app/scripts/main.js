@@ -1,6 +1,17 @@
 /* global mapboxgl */
 /* global $ */
 
+
+function getUrlVars() {
+  var vars = {};
+  var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+      vars[key] = value;
+  });
+  return vars;
+}
+
+const urlParams = getUrlVars();
+
 /*
 
 *** MAP VARIABLES ***
@@ -584,6 +595,15 @@ const getMeasures = () => {
     currentMeasure = measures.find(d => d.key === 'hdvi');
     currentMeasureName = currentMeasure.key;
     updateMeasure(currentMeasure);
+
+    const charts = urlParams['charts'];
+    if (charts) {
+      const ids = charts.split(',');
+      ids.forEach((id) => {
+        const measure = measures.find(m => m.key.toLowerCase() === id.toLowerCase());
+        if (measure) addChart(measure);
+      })
+    }
   });
 }
 
