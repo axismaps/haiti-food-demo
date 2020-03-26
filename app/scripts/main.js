@@ -522,10 +522,6 @@ const requestTableData = (unit) => {
     body: filterBody.length ? JSON.stringify(filterBody) : null
   }).catch(console.log)
   .then((json) => {
-    // if (!cachedChartData[measureName]) cachedChartData[measureName] = {};
-    // if (!id) cachedChartData[measureName].all = json;
-    // else cachedChartData[measureName][id] = json;
-    //console.log(json)
     const numColummns = d3.max(Object.values(json).map(d => d.length));
     const cols = ['Name'].concat(Object.values(json).find(d => d.length === numColummns)
       .map(d => currentMeasure.type === 'list' ? currentMeasure.values[d.value - 1] : d.value));
@@ -533,7 +529,13 @@ const requestTableData = (unit) => {
     d3.select('#table thead tr').selectAll('th')
       .data(cols)
       .join('th')
-      .html(d => d);
+      .html((d, i) => {
+        if (currentMeasure.type === 'list' || i === 0) {
+          return d;
+        }
+        if (i === cols.length - 1) return `${d}+`;
+        return `${d}–${cols[i + 1]}`;
+      });
 
     const rows = Object.entries(json).map(([id, data]) => [id].concat(data));
     const names = map.querySourceFeatures('haiti', {sourceLayer: unit || currentUnit})
