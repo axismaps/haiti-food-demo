@@ -74,11 +74,16 @@
             <div class="sidebar-content-inner"></div>
           </div>
         </div>
-        <div class="map-container col d-flex flex-column h-100">
-          <div id="map" class="h-75 flex-shrink-0"></div>
-          <div id="table" class="overflow-auto">
-            <table class="table table-borderless table-striped">
-              <thead></thead>
+        <div class="map-container col col-9 d-flex flex-column h-100">
+          <div id="map"></div>
+          <div id="table" class="mh-25 table-responsive">
+            <div id="table-loading" class="align-items-center justify-content-center">
+              <div class="spinner-border" role="status">
+                <span class="sr-only">Loading...</span>
+              </div>
+            </div>
+            <table class="table table-borderless table-striped table-sm">
+              <thead><tr></tr></thead>
               <tbody></tbody>
             </table>
           </div>

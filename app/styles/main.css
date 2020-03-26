@@ -42,7 +42,7 @@ header {
   padding: 15px;
 }
 
-#loading {
+#loading, #table-loading {
   position: absolute;
   top: 0;
   left: 0;
@@ -62,4 +62,16 @@ header {
 
 .slider {
   align-self: center;
+}
+
+#table {
+  position: relative;
+}
+
+#table td:first-child {
+  width: 20%;
+}
+
+td, th {
+  min-width: 100px;
 }
