@@ -616,9 +616,30 @@ const getMeasures = () => {
     if (charts) {
       const ids = charts.split(',');
       ids.forEach((id) => {
-        const measure = measures.find(m => m.key.toLowerCase() === id.toLowerCase());
+        const measure = measures.find(m => m.key.toLowerCase() === decodeURIComponent(id).toLowerCase());
         if (measure) addChart(measure);
       })
+    }
+
+    const urlFilters = urlParams['filters'];
+    if (urlFilters) {
+      const parsedFilters = [];
+      const filts = urlFilters.split(';');
+      filts.forEach((f) => {
+        const decoded = decodeURIComponent(f);
+        const commas = decoded.match(/,/g);
+        if (commas.length < 2) return;
+        const firstComma = decoded.indexOf(',');
+        const firstArg = decoded.substring(0, firstComma);
+        const secondComma = decoded.indexOf(',', firstComma + 1);
+        const secondArg = decoded.substring(firstComma + 1, secondComma);
+        try {
+          const parsed = JSON.parse(`["${firstArg}", "${secondArg}", ${decoded.substring(secondComma + 1)}]`);
+          parsedFilters.push(parsed);
+        } catch (e) {
+          console.log(e);
+        }
+      });
     }
   });
 }
