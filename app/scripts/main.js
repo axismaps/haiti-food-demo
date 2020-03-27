@@ -674,7 +674,7 @@ const handleMousemove = (e) => {
         formatted = d3.format('.2~r')(d.value);
       }
     }
-    showProbe([pageX, pageY], feature.properties.name, `${currentMeasure.label}: ${formatted}`);        
+    showProbe([pageX, pageY], feature.properties.name, `<strong>${currentMeasure.label}:</strong> ${formatted}`);        
     
     // get chart data
     if (hoveredUnit !== feature.properties.id) {
