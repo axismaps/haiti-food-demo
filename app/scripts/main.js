@@ -227,6 +227,7 @@ let filters = [];
 
 const updateChoroplethLegend = () => {
   if (currentMeasure.type !== 'list') {
+    $('#map-legend').css('max-height', '');
     let swatches = d3.select('#map-legend').selectAll('.legend-swatch')
       .data(choroplethBreaks.concat(null))
     const newSwatches = swatches.enter()
@@ -244,6 +245,7 @@ const updateChoroplethLegend = () => {
     swatches.select('span')
       .html((d, i) => i === choroplethBreaks.length ? '' : d3.format('.2~r')(d));
   } else {
+    $('#map-legend').css('max-height', `${Math.max(35 * currentMeasure.values.length / 2, 150)}px`);
     let swatches = d3.select('#map-legend').selectAll('.legend-swatch')
       .data(currentMeasure.values)
     const newSwatches = swatches.enter()
