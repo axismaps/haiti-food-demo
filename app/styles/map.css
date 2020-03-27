@@ -3,58 +3,82 @@
     width: 100%;
 }
 
+#map-legend {
+  max-height: 225px;
+}
+
 .legend-swatch {
+  position: relative;
+  max-width: 120px;
+  white-space: nowrap;
+  margin-top: -1px;
+}
+
+.legend-swatch > * {
+  display: inline-block;
+  vertical-align: middle;
+  position: relative;
+}
+
+.legend-swatch div.swatch {
   width: 25px;
   height: 25px;
 }
 
+.legend-swatch.categorical div.swatch {
+  width: 20px;
+  height: 20px;
+}
+
+.legend-swatch div.dash {
+  width: 8px;
+  height: 1px;
+  border-bottom: 1px solid #333;
+  top: 12.5px;
+}
+
+.legend-swatch.categorical div.dash {
+  top: 0;
+}
+
+.legend-swatch:nth-of-type(5) div.dash {
+  display: none;
+}
+
+.legend-swatch.categorical:nth-of-type(5) div.dash {
+  display: inline-block;
+}
+
 .legend-swatch span {
-  position: relative;
-  left: 35px;
-  top: 11px;
-  white-space: nowrap;
   font-size: 12px;
+  line-height: 13px;
+  white-space: normal;
+  margin-left: 2px;
+  top: 12.5px;
+}
+
+.legend-swatch.categorical {
+  margin-top: 2px;
 }
 
 .legend-swatch.categorical span {
-  top: -2px;
+  top: 0;
+}
+
+.chart-legend {
+  max-height: 200px;
 }
 
 .chart-legend .legend-swatch {
+  max-width: 100px;
+}
+
+.chart-legend .legend-swatch div.swatch {
   width: 12px;
   height: 12px;
 }
 
 .chart-legend .legend-swatch span {
-  left: 20px;
   font-size: 10px;
-}
-
-.chart-legend .legend-swatch.categorical span {
-  top: -6px;
-}
-
-.legend-swatch span::before {
-  content: '';
-  width: 8px;
-  border-bottom: 1px solid #333;
-  height: 1px;
-  display: block;
-  left: -10px;
-  top: 14px;
-  position: relative;
-}
-
-.chart-legend .legend-swatch span::before {
-  left: -8px;
-  width: 6px;
-  top: 12px;
-}
-
-.legend-swatch:last-child span::before {
-  display: none;
-}
-
-.legend-swatch.categorical:last-child span::before {
-  display: block;
+  line-height: 12px;
 }

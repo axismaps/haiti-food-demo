@@ -227,32 +227,38 @@ let filters = [];
 
 const updateChoroplethLegend = () => {
   if (currentMeasure.type !== 'list') {
-    const swatches = d3.select('#map-legend').selectAll('.legend-swatch')
+    let swatches = d3.select('#map-legend').selectAll('.legend-swatch')
       .data(choroplethBreaks.concat(null))
-    swatches.enter()
-      .append('div')
+    const newSwatches = swatches.enter()
+      .insert('div', '.main-histogram')
       .attr('class', 'legend-swatch')
-      .append('span');
+    newSwatches.append('div').attr('class', 'swatch');
+    newSwatches.append('div').attr('class', 'dash');
+    newSwatches.append('span');
     swatches.exit().remove();
 
-    d3.select('#map-legend').selectAll('.legend-swatch')
+    swatches = d3.select('#map-legend').selectAll('.legend-swatch')
       .classed('categorical', false)
-      .style('background-color', (d, i) => choroplethColors[i])
-      .select('span')
+    swatches.select('div')
+      .style('background-color', (d, i) => choroplethColors[i]);
+    swatches.select('span')
       .html((d, i) => i === choroplethBreaks.length ? '' : d3.format('.2~r')(d));
   } else {
-    const swatches = d3.select('#map-legend').selectAll('.legend-swatch')
+    let swatches = d3.select('#map-legend').selectAll('.legend-swatch')
       .data(currentMeasure.values)
-    swatches.enter()
+    const newSwatches = swatches.enter()
       .append('div')
-      .attr('class', 'legend-swatch')
-      .append('span');
+      .attr('class', 'legend-swatch');
+    newSwatches.append('div').attr('class', 'swatch');
+    newSwatches.append('div').attr('class', 'dash');
+    newSwatches.append('span');
     swatches.exit().remove();
 
-    d3.select('#map-legend').selectAll('.legend-swatch')
+    swatches = d3.select('#map-legend').selectAll('.legend-swatch')
       .classed('categorical', true)
-      .style('background-color', (d, i) => categoricalColors[i])
-      .select('span')
+    swatches.select('div.swatch')
+      .style('background-color', (d, i) => categoricalColors[i]);
+    swatches.select('span')
       .html(d => d);
   }  
 }
@@ -528,8 +534,6 @@ const requestTableData = (unit) => {
     
     const headers = d3.select('#table thead tr').selectAll('th')
       .data(cols);
-
-    console.log(headers)
     
     headers.enter().append('th')
       .append('div');
@@ -918,21 +922,19 @@ const addChart = (measure) => {
         .call(donut);
 
       const legend = d3.select(chartContent[0]).append('div')
-        .attr('class', 'chart-legend');
+        .attr('class', 'chart-legend d-flex flex-column flex-wrap');
 
-      const swatches = legend.selectAll('.legend-swatch')
+      let swatches = legend.selectAll('.legend-swatch')
         .data(measure.values)
-      swatches.enter()
+      const newSwatches = swatches.enter()
         .append('div')
         .attr('class', 'legend-swatch categorical')
-        .append('span');
-      swatches.exit().remove();
-  
-      legend.selectAll('.legend-swatch')
-        .classed('categorical', true)
+      newSwatches.append('div')
+        .attr('class', 'swatch')
         .style('background-color', (d, i) => categoricalColors[i])
-        .select('span')
-        .html(d => d);
+      newSwatches.append('div').attr('class', 'dash')
+      newSwatches.append('span').html(d => d);
+      swatches.exit().remove();
     } else {
       const histogram = Histogram()
         .value(d => d.count)
@@ -945,7 +947,7 @@ const addChart = (measure) => {
 
       d3.select(chartContent[0]).append('svg')
         .attr('width', 270)
-        .attr('height', 120)
+        .attr('height', 100)
         .call(histogram);
     }
   }
