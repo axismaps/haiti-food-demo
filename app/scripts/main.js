@@ -610,8 +610,7 @@ const getMeasures = () => {
 
     currentMeasure = measures.find(d => d.key === 'hdvi');
     currentMeasureName = currentMeasure.key;
-    updateMeasure(currentMeasure);
-
+    
     const charts = urlParams['charts'];
     if (charts) {
       const ids = charts.split(',');
@@ -640,16 +639,30 @@ const getMeasures = () => {
           console.log(e);
         }
       });
+      const filtersByKey = {};
+      parsedFilters.forEach(f => {
+        const [operator, key, value] = f;
+        if (!filtersByKey[key]) filtersByKey[key] = [];
+        filtersByKey[key].push([operator, value]);
+      });
+      Object.entries(filtersByKey).forEach(([key, initialValues]) => {
+        addFilter(measures.find(m => m.key === key), initialValues);
+      });
     }
+
+    updateMeasure(currentMeasure, true);
   });
 }
 
-const updateMeasure = (measure) => {
+const updateMeasure = (measure, retainFilters = false) => {
   currentMeasure = measure;
   currentMeasureName = measure.key;
-  $('.filter-card').remove();
-  filters = [];
-  updateFilterDropdown();
+  if (!retainFilters) {
+    $('.filter-card').remove();
+    filters = [];
+    updateFilterDropdown();
+  }
+  
   $('#measure-name').html(currentMeasure.label);
   if (currentUnit === 'grid' || currentUnit === 'points') {
     requestTableData('section');
@@ -799,7 +812,7 @@ const updateFilterDropdown = () => {
     })
 };
 
-const addFilter = (measure) => {
+const addFilter = (measure, initialValues) => {
   const filterCard = $('<div>')
     .attr('class', 'card filter-card small d-flex flex-column my-3 px-2 pb-2 pt-3')
     .attr('data-measure', measure.key)
@@ -822,9 +835,16 @@ const addFilter = (measure) => {
     });
 
   if (measure.type !== 'list') {
+    const values = [measure.min, measure.max];
+    if (initialValues) {
+      const min = initialValues.find(v => v[0] === '>' || v[0] === '>=');
+      if (min) values[0] = min[1];
+      const max = initialValues.find(v => v[0] === '<' || v[0] === '<=');
+      if (max) values[1] = max[1];
+    }
     const subtitle = $('<h6>')
       .attr('class', 'card-subtitle text-muted text-center')
-      .html(`${measure.min} – ${measure.max}`)
+      .html(`${values[0]} – ${values[1]}`)
       .insertBefore(filterContent);
       
     $('<input>')
@@ -833,7 +853,7 @@ const addFilter = (measure) => {
       .slider({
         min: measure.min,
         max: measure.max,
-        value: [measure.min, measure.max],
+        value: values,
         ticks: [measure.min, measure.max],
         ticks_labels: [measure.min, measure.max],
         tooltip: 'always',
@@ -851,8 +871,12 @@ const addFilter = (measure) => {
         requestData();
       });
 
-    filters.push({ key: measure.key, values: [['>=', measure.key, measure.min], ['<=', measure.key, measure.max]] });
+    filters.push({ key: measure.key, values: [['>=', measure.key, values[0]], ['<=', measure.key, values[1]]] });
   } else {
+    let values = d3.range(1, measure.values.length + 1);
+    if (initialValues) {
+      values = initialValues[0][1];
+    }
     d3.select(filterContent[0]).selectAll('div')
       .data(measure.values)
       .enter()
@@ -861,7 +885,7 @@ const addFilter = (measure) => {
       .append('label')
       .html(d => `<span>${d}</span>`)
       .insert('input', ':first-child')
-      .attr('checked', 1)
+      .attr('checked', (d, i) => values.includes(i + 1) ? 1 : null)
       .attr('type', 'checkbox')
       .attr('class', 'form-check-input')
       .on('change', () => {
@@ -882,7 +906,7 @@ const addFilter = (measure) => {
         requestData();
       });
 
-      filters.push({ key: measure.key, values: [['=', measure.key, d3.range(1, measure.values.length + 1)]] });
+      filters.push({ key: measure.key, values: [['=', measure.key, values]] });
   }
   updateFilterDropdown();
 };
