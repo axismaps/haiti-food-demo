@@ -628,7 +628,7 @@ const getMeasures = () => {
         const decoded = decodeURIComponent(f);
         const commas = decoded.match(/,/g);
         if (!commas) {
-          addFilter(measures.find(m => m.key === decoded));
+          addFilter(measures.find(m => m.key === decoded), false);
           return;
         }
         if (commas.length < 2) {
@@ -652,7 +652,7 @@ const getMeasures = () => {
         filtersByKey[key].push([operator, value]);
       });
       Object.entries(filtersByKey).forEach(([key, initialValues]) => {
-        addFilter(measures.find(m => m.key === key), initialValues);
+        addFilter(measures.find(m => m.key === key), false, initialValues);
       });
     }
 
@@ -818,7 +818,7 @@ const updateFilterDropdown = () => {
     })
 };
 
-const addFilter = (measure, initialValues) => {
+const addFilter = (measure, closeable = true, initialValues) => {
   if (!measure) return;
   const filterCard = $('<div>')
     .attr('class', 'card filter-card small d-flex flex-column my-3 px-2 pb-2 pt-3')
@@ -834,13 +834,15 @@ const addFilter = (measure, initialValues) => {
     .attr('class', 'filter-content d-flex flex-column justify-content-center')
     .appendTo(filterCard);
 
-  $('<i>')
-    .attr('class', 'fa fa-times')
-    .appendTo(filterCard)
-    .on('click', () => {
-      removeFilter(measure.key);
-    });
-
+  if (closeable) {
+    $('<i>')
+      .attr('class', 'fa fa-times')
+      .appendTo(filterCard)
+      .on('click', () => {
+        removeFilter(measure.key);
+      });
+  }
+  
   if (measure.type !== 'list') {
     const values = [measure.min, measure.max];
     if (initialValues) {
