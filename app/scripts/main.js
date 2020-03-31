@@ -616,7 +616,7 @@ const getMeasures = () => {
       const ids = charts.split(',');
       ids.forEach((id) => {
         const measure = measures.find(m => m.key.toLowerCase() === decodeURIComponent(id).toLowerCase());
-        if (measure) addChart(measure);
+        if (measure) addChart(measure, false);
       })
     }
 
@@ -933,7 +933,7 @@ const removeFilter = (key) => {
 
 */
 
-const addChart = (measure) => {
+const addChart = (measure, closeable = true) => {
   const chartCard = $('<div>')
     .attr('class', 'card chart-card small d-flex flex-column my-3 px-2 pb-2 pt-3')
     .attr('data-measure', measure.key)
@@ -948,13 +948,15 @@ const addChart = (measure) => {
     .attr('class', 'filter-content d-flex flex-column justify-content-center')
     .appendTo(chartCard);
 
-  $('<i>')
-    .attr('class', 'fa fa-times')
-    .appendTo(chartCard)
-    .on('click', () => {
-      removeChart(measure.key);
-    });
-
+  if (closeable) {
+    $('<i>')
+      .attr('class', 'fa fa-times')
+      .appendTo(chartCard)
+      .on('click', () => {
+        removeChart(measure.key);
+      });
+  }
+  
   let chartData;
 
   const drawChart = () => {
