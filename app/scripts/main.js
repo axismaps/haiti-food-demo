@@ -597,7 +597,7 @@ const getMeasures = () => {
       .attr('class', 'dropdown-item')
       .attr('href', '#')
       .html(d => d.label)
-      .on('click', addFilter);
+      .on('click', (d) => { addFilter(d) });
 
     d3.select('#chart-dropdown .dropdown-menu').selectAll('a')
       .data(measures)
@@ -606,7 +606,7 @@ const getMeasures = () => {
       .attr('class', 'dropdown-item')
       .attr('href', '#')
       .html(d => d.label)
-      .on('click', addChart);
+      .on('click', (d) => { addChart(d) });
 
     currentMeasure = measures.find(d => d.key === 'hdvi');
     currentMeasureName = currentMeasure.key;
