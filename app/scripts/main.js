@@ -627,7 +627,13 @@ const getMeasures = () => {
       filts.forEach((f) => {
         const decoded = decodeURIComponent(f);
         const commas = decoded.match(/,/g);
-        if (commas.length < 2) return;
+        if (!commas) {
+          addFilter(measures.find(m => m.key === decoded));
+          return;
+        }
+        if (commas.length < 2) {
+          return;
+        };
         const firstComma = decoded.indexOf(',');
         const firstArg = decoded.substring(0, firstComma);
         const secondComma = decoded.indexOf(',', firstComma + 1);
@@ -813,6 +819,7 @@ const updateFilterDropdown = () => {
 };
 
 const addFilter = (measure, initialValues) => {
+  if (!measure) return;
   const filterCard = $('<div>')
     .attr('class', 'card filter-card small d-flex flex-column my-3 px-2 pb-2 pt-3')
     .attr('data-measure', measure.key)
