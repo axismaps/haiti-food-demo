@@ -273,6 +273,16 @@ const updatePoints = () => {
   const scale = d3.scaleQuantize().domain([currentMeasure.min, currentMeasure.max]).range(choroplethColors).nice();
   choroplethBreaks = scale.thresholds();
 
+  map.on('mousemove', 'points', (e) => {
+    if (e.features.length) {
+      const features = [...e.features];
+      const feature = features[0];
+      const { pageX, pageY } = e.originalEvent;
+      const valText = currentMeasure.type === 'list' ? currentMeasure.values[feature.properties.value - 1] : d3.format('.2~r')(feature.properties.value);
+      showProbe([pageX, pageY], currentMeasure.label, valText);   
+    }
+  }).on('mouseout', 'points', handleMouseout);
+
   if (currentMeasure.type !== 'list') {
     const fill = ['case',
       ['==', ['get', 'value'], null], '#ccc',
