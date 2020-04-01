@@ -88,7 +88,7 @@ function lintTest() {
 function html() {
   return src('app/*.html')
     .pipe($.useref({ searchPath: ['.tmp', 'app', '.'] }))
-    .pipe($.if(/\.js$/, $.uglify({ compress: { drop_console: true } })))
+    .pipe($.if(/\.js$/, $.terser({ compress: { drop_console: true } })))
     .pipe($.if(/\.css$/, $.postcss([cssnano({ safe: true, autoprefixer: false })])))
     .pipe($.if(/\.html$/, $.htmlmin({
       collapseWhitespace: true,
