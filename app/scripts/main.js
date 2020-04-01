@@ -212,7 +212,7 @@ const mainHistogram = Histogram()
   .value(d => d.count)
   .on('mousemove', (d) => {
     const { pageX, pageY } = d3.event;
-    showProbe([pageX, pageY], d3.format(',')(d.count)); 
+    showProbe([pageX, pageY], d.label, d3.format(',')(d.count)); 
   })
   .on('mouseout', () => { $('#probe').hide() });
 d3.select('.main-histogram svg')
@@ -522,10 +522,15 @@ const requestChartData = (measureName = currentMeasureName, id) => {
     body: id ? JSON.stringify([['=', unit, id]]) : null
   }).catch(console.log)
   .then((json) => {
-    if (!cachedChartData[measureName]) cachedChartData[measureName] = {};
-    if (!id) cachedChartData[measureName].all = json;
-    else cachedChartData[measureName][id] = json;
-    return json;
+    const measure = measures.find(m => m.key === measureName);
+    const data = json.map((d, i) => Object.assign({
+      label: measure.type === 'list' ?
+        d.value : (i === json.length - 1 ? `${d.value}+` : `${d.value} – ${json[i + 1].value}`)
+    }, d));
+    if (!filters.length && !cachedChartData[measureName]) cachedChartData[measureName] = {};
+    if (!filters.length && !id) cachedChartData[measureName].all = data;
+    else if (!filters.length) cachedChartData[measureName][id] = data;
+    return data;
   });
 };
 
@@ -1009,7 +1014,7 @@ const addChart = (measure, closeable = true) => {
         .data(chartData)
         .on('mousemove', (d) => {
           const { pageX, pageY } = d3.event;
-          showProbe([pageX, pageY], d3.format(',')(d.count)); 
+          showProbe([pageX, pageY], d.label, d3.format(',')(d.count)); 
         })
         .on('mouseout', () => { $('#probe').hide() });
 
