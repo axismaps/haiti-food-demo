@@ -859,6 +859,11 @@ const handleMouseout = () => {
   $('#probe').hide();
 }
 
+const handleClick = (e) => {
+  const [feature] = e.features;
+  map.fitBounds(turf.bbox(feature.geometry), { maxZoom: maxZooms[currentUnit] + 0.1 });
+}
+
 /*
 
 *** FILTER METHODS ***
@@ -1103,10 +1108,13 @@ const init = () => {
     // mouse events
     .on('mousemove', 'departement', handleMousemove)
     .on('mouseout', 'departement', handleMouseout)
+    .on('click', 'departement', handleClick)
     .on('mousemove', 'commune', handleMousemove)
     .on('mouseout', 'commune', handleMouseout)
+    .on('click', 'commune', handleClick)
     .on('mousemove', 'section', handleMousemove)
     .on('mouseout', 'section', handleMouseout)
+    .on('click', 'section', handleClick)
     // zoom event: update geography level
     .on('zoomend', () => {
       const z = map.getZoom();
