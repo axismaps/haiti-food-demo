@@ -89,7 +89,8 @@ const communeLayer = {
   maxzoom: maxZooms.commune,
   paint: {
     'fill-color': '#ccc',
-    'fill-opacity': .5
+    'fill-opacity': .5,
+    'fill-outline-color': '#ccc'
   }
 };
 
@@ -101,7 +102,13 @@ const communeLineLayer = {
   minzoom: maxZooms.departement,
   maxzoom: maxZooms.commune,
   paint: {
-    'line-color': '#ccc',
+    'line-color': '#000',
+    'line-opacity': [
+      'case',
+      ['boolean', ['feature-state', 'hover'], false],
+      1,
+      0
+    ]
   }
 };
 
@@ -114,7 +121,8 @@ const sectionLayer = {
   maxzoom: maxZooms.section,
   paint: {
     'fill-color': '#ccc',
-    'fill-opacity': .5
+    'fill-opacity': .5,
+    'fill-outline-color': '#ccc'
   }
 };
 
@@ -125,7 +133,13 @@ const sectionLineLayer = {
   type: 'line',
   minzoom: maxZooms.commune,
   paint: {
-    'line-color': '#ccc',
+    'line-color': '#000',
+    'line-opacity': [
+      'case',
+      ['boolean', ['feature-state', 'hover'], false],
+      1,
+      0
+    ]
   }
 };
 
