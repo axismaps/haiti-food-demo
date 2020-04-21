@@ -45,7 +45,7 @@ map.addControl(nav, 'top-left');
 
 const geoSource = {
   type: 'vector',
-  url: 'mapbox://axismaps.0px6eqw0'
+  url: 'mapbox://axismaps.ciifdnvd'
 };
 
 const departementLayer = {
@@ -57,7 +57,8 @@ const departementLayer = {
   maxzoom: maxZooms.departement,
   paint: {
     'fill-color': '#ccc',
-    'fill-opacity': .5
+    'fill-opacity': .5,
+    'fill-outline-color': '#ccc'
   }
 };
 
@@ -69,7 +70,13 @@ const departementLineLayer = {
   minzoom: 0,
   maxzoom: maxZooms.departement,
   paint: {
-    'line-color': '#ccc',
+    'line-color': '#000',
+    'line-opacity': [
+      'case',
+      ['boolean', ['feature-state', 'hover'], false],
+      1,
+      0
+    ]
   }
 };
 
@@ -178,6 +185,7 @@ let currentMeasure;
 let currentMeasureName = 'hdvi';
 let currentUnit = 'departement';
 let hoveredUnit = null;
+let hoveredStateId = null;
 
 const apiBase = 'https://simast.herokuapp.com/v1/data/';
 
@@ -735,6 +743,18 @@ const handleMousemove = (e) => {
         formatted = d3.format('.2~r')(d.value);
       }
     }
+
+    if (hoveredStateId) {
+      map.setFeatureState(
+        { source: 'haiti', sourceLayer: `${currentUnit}`, id: hoveredStateId },
+        { hover: false }
+      );
+    }
+    hoveredStateId = feature.id;
+    map.setFeatureState(
+      { source: 'haiti', sourceLayer: `${currentUnit}`, id: hoveredStateId },
+      { hover: true }
+    );
     showProbe([pageX, pageY], feature.properties.name, `<strong>${currentMeasure.label}:</strong> ${formatted}`);        
     
     // get chart data
@@ -814,6 +834,13 @@ const handleMouseout = () => {
     currentChartData = cachedChartData[currentMeasureName].all;
     updateChart();
   }
+  if (hoveredStateId) {
+    map.setFeatureState(
+      { source: 'haiti', sourceLayer: `${currentUnit}`, id: hoveredStateId },
+      { hover: false }
+    );
+  }
+  hoveredStateId = null;
   
   $('#probe').hide();
 }
