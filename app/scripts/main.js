@@ -201,7 +201,7 @@ let currentUnit = 'departement';
 let hoveredUnit = null;
 let hoveredStateId = null;
 
-const apiBase = 'https://simast.herokuapp.com/v1/data/';
+const apiBase = 'http://localhost:3000/v1/data/';
 
 const cachedData = {};
 let currentData = null;
@@ -616,7 +616,7 @@ const requestTableData = (unit) => {
 };
 
 const getMeasures = () => {
-  d3.json('https://simast.herokuapp.com/v1/data/fields').then((json) => {
+  d3.json('http://localhost:3000/v1/data/fields').then((json) => {
     measures = json;
     d3.select('#measure-dropdown .dropdown-menu').selectAll('a')
       .data(measures)
@@ -729,11 +729,13 @@ const updateUnit = (unit) => {
   currentUnit = unit;
   if (unit === 'grid' || unit == 'points') {
     requestData();
+    $('#table').hide();
   } else {
     map.setPaintProperty(currentUnit, 'fill-color', fillStyle);
+    $('#table').show();
     requestTableData();
   }
-  
+  map.resize();
 }
 
 /*
