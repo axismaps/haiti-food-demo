@@ -707,11 +707,7 @@ const updateMeasure = (measure, retainFilters = false) => {
   }
   
   $('#measure-name').html(currentMeasure.label);
-  if (currentUnit === 'grid' || currentUnit === 'points') {
-    requestTableData('section');
-  } else {
-    requestTableData();
-  }
+  requestTableData();
   requestData();
   if (cachedChartData[currentMeasureName]) {
     currentChartData = cachedChartData[currentMeasureName].all;
@@ -976,6 +972,7 @@ const addFilter = (measure, closeable = true, initialValues) => {
           filter.values = [['=', measure.key, d3.range(1, measure.values.length + 1)]];
         }
         requestData();
+        requestTableData();
       });
 
       filters.push({ key: measure.key, values: [['=', measure.key, values]] });
@@ -988,6 +985,7 @@ const removeFilter = (key) => {
   $(`.filter-card[data-measure="${key}"]`).remove();
   updateFilterDropdown();
   requestData();
+  requestTableData();
 }
 
 /*
