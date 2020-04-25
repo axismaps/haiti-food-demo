@@ -201,7 +201,7 @@ let currentUnit = 'departement';
 let hoveredUnit = null;
 let hoveredStateId = null;
 
-const apiBase = 'http://localhost:3000/v1/data/';
+const apiBase = 'https://simast.herokuapp.com/v1/data/';
 
 const cachedData = {};
 let currentData = null;
@@ -616,7 +616,7 @@ const requestTableData = (unit) => {
 };
 
 const getMeasures = () => {
-  d3.json('http://localhost:3000/v1/data/fields').then((json) => {
+  d3.json('https://simast.herokuapp.com/v1/data/fields').then((json) => {
     measures = json;
     d3.select('#measure-dropdown .dropdown-menu').selectAll('a')
       .data(measures)
@@ -937,6 +937,7 @@ const addFilter = (measure, closeable = true, initialValues) => {
         if (!filter) return;
         filter.values = [['>=', measure.key, value[0]], ['<=', measure.key, value[1]]];
         requestData();
+        requestTableData();
       });
 
     filters.push({ key: measure.key, values: [['>=', measure.key, values[0]], ['<=', measure.key, values[1]]] });
