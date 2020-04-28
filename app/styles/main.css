@@ -65,6 +65,16 @@ header {
   align-self: center;
 }
 
+.zoom.dropdown{
+  position: absolute;
+  z-index: 1;
+  margin: 10px;
+}
+
+.zoom .dropdown-menu{
+  max-height: none;
+}
+
 #table {
   position: relative;
   max-height: 25%;

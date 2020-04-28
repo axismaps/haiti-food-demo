@@ -40,8 +40,8 @@ const map = new mapboxgl.Map({
   bounds: extent,
 });
 
-const nav = new mapboxgl.NavigationControl();
-map.addControl(nav, 'top-left');
+map.scrollZoom.disable();
+map.doubleClickZoom.disable();
 
 const geoSource = {
   type: 'vector',
@@ -1148,6 +1148,10 @@ const init = () => {
   $('input.slider').slider({
     value: [2, 5]
   });
+
+  $('.zoom .dropdown-item').click((e) => {
+    map.zoomTo($(e.target).attr('data-zoom'));
+  })
 };
 
 map.on('load', init);

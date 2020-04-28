@@ -85,6 +85,16 @@
         </div>
       </div>
       <div class="map-container col col-9 d-flex flex-column h-100">
+        <div class="zoom dropdown">
+          <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Zoom To:</button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <a class="dropdown-item" href="#" data-zoom="7.5">Departement</a>
+            <a class="dropdown-item" href="#" data-zoom="8.5">Commune</a>
+            <a class="dropdown-item" href="#" data-zoom="9.5">Section</a>
+            <a class="dropdown-item" href="#" data-zoom="10.5">Grid</a>
+            <a class="dropdown-item" href="#" data-zoom="12.5">Household</a>
+          </div>
+        </div>
         <div id="map"></div>
         <div id="table" class="table-responsive">
           <div id="table-loading" class="align-items-center justify-content-center">
